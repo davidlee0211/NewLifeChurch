@@ -12,7 +12,7 @@ interface QTTopic {
   date: string;
   title: string;
   content: string;
-  image_url: string | null;
+  image_urls: string[];
 }
 
 export default function QTTopicsPage() {
@@ -21,8 +21,9 @@ export default function QTTopicsPage() {
   const [topic, setTopic] = useState<QTTopic | null>(null);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [existingUrls, setExistingUrls] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [recentTopics, setRecentTopics] = useState<QTTopic[]>([]);
@@ -47,15 +48,17 @@ export default function QTTopicsPage() {
         setTopic(topicData);
         setTitle(topicData.title);
         setContent(topicData.content);
-        setPreviewUrl(topicData.image_url);
+        setExistingUrls(topicData.image_urls || []);
+        setPreviewUrls([]);
       } else {
         setTopic(null);
         setTitle("");
         setContent("");
-        setPreviewUrl(null);
+        setExistingUrls([]);
+        setPreviewUrls([]);
       }
 
-      setSelectedImage(null);
+      setSelectedImages([]);
       setIsLoading(false);
     };
 
@@ -82,22 +85,37 @@ export default function QTTopicsPage() {
     fetchRecentTopics();
   }, [churchId, topic]);
 
-  // 이미지 선택
+  // 이미지 선택 (다중)
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedImage(file);
-      setPreviewUrl(URL.createObjectURL(file));
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // 최대 10개까지 허용
+    const totalCount = existingUrls.length + selectedImages.length + files.length;
+    if (totalCount > 10) {
+      alert("이미지는 최대 10개까지 업로드할 수 있습니다.");
+      return;
     }
+
+    setSelectedImages(prev => [...prev, ...files]);
+
+    // 미리보기 URL 생성
+    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
+    setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
   };
 
-  // 이미지 제거
-  const removeImage = () => {
-    setSelectedImage(null);
-    setPreviewUrl(null);
+  // 새로 선택한 이미지 제거
+  const removeNewImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  // 기존 이미지 제거
+  const removeExistingImage = (index: number) => {
+    setExistingUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   // 저장
@@ -110,17 +128,18 @@ export default function QTTopicsPage() {
     setIsSaving(true);
 
     try {
-      let imageUrl = topic?.image_url || null;
+      // 새 이미지들 업로드
+      const newImageUrls: string[] = [];
 
-      // 새 이미지가 선택된 경우 업로드
-      if (selectedImage) {
+      for (let i = 0; i < selectedImages.length; i++) {
+        const file = selectedImages[i];
         const timestamp = Date.now();
-        const fileExt = selectedImage.name.split(".").pop() || "jpg";
-        const filePath = `qt-topics/${churchId}/${selectedDate}_${timestamp}.${fileExt}`;
+        const fileExt = file.name.split(".").pop() || "jpg";
+        const filePath = `qt-topics/${churchId}/${selectedDate}_${timestamp}_${i}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("qt-photos")
-          .upload(filePath, selectedImage);
+          .upload(filePath, file);
 
         if (uploadError) {
           console.error("Upload error:", uploadError);
@@ -133,8 +152,11 @@ export default function QTTopicsPage() {
           .from("qt-photos")
           .getPublicUrl(filePath);
 
-        imageUrl = urlData.publicUrl;
+        newImageUrls.push(urlData.publicUrl);
       }
+
+      // 기존 이미지 + 새 이미지
+      const allImageUrls = [...existingUrls, ...newImageUrls];
 
       if (topic) {
         // 기존 주제 업데이트
@@ -143,7 +165,7 @@ export default function QTTopicsPage() {
           .update({
             title: title.trim(),
             content: content.trim(),
-            image_url: imageUrl,
+            image_urls: allImageUrls,
           } as never)
           .eq("id", topic.id);
 
@@ -161,7 +183,7 @@ export default function QTTopicsPage() {
             date: selectedDate,
             title: title.trim(),
             content: content.trim(),
-            image_url: imageUrl,
+            image_urls: allImageUrls,
           }] as never);
 
         if (error) {
@@ -180,7 +202,11 @@ export default function QTTopicsPage() {
         .single();
 
       if (newData) {
-        setTopic(newData as QTTopic);
+        const topicData = newData as QTTopic;
+        setTopic(topicData);
+        setExistingUrls(topicData.image_urls || []);
+        setPreviewUrls([]);
+        setSelectedImages([]);
       }
 
       alert("저장되었습니다!");
@@ -211,8 +237,9 @@ export default function QTTopicsPage() {
     setTopic(null);
     setTitle("");
     setContent("");
-    setPreviewUrl(null);
-    setSelectedImage(null);
+    setExistingUrls([]);
+    setPreviewUrls([]);
+    setSelectedImages([]);
   };
 
   // 날짜 이동
@@ -231,6 +258,10 @@ export default function QTTopicsPage() {
     const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
     return `${date.getMonth() + 1}월 ${date.getDate()}일 (${dayNames[date.getDay()]})`;
   };
+
+  // 총 이미지 개수
+  const totalImageCount = existingUrls.length + selectedImages.length;
+  const canAddMore = totalImageCount < 10;
 
   return (
     <div className="space-y-6">
@@ -324,32 +355,73 @@ export default function QTTopicsPage() {
                   {/* 이미지 */}
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
-                      이미지 (선택)
+                      이미지 (선택, 최대 10개) - {totalImageCount}/10
                     </label>
 
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
+                      multiple
                       onChange={handleImageSelect}
                       className="hidden"
                     />
 
-                    {previewUrl ? (
-                      <div className="relative">
-                        <img
-                          src={previewUrl}
-                          alt="미리보기"
-                          className="w-full max-h-64 object-cover rounded-xl border-2 border-gray-200"
-                        />
+                    {/* 이미지 그리드 */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                      {/* 기존 이미지들 */}
+                      {existingUrls.map((url, index) => (
+                        <div key={`existing-${index}`} className="relative aspect-square">
+                          <img
+                            src={url}
+                            alt={`이미지 ${index + 1}`}
+                            className="w-full h-full object-cover rounded-xl border-2 border-gray-200"
+                          />
+                          <button
+                            onClick={() => removeExistingImage(index)}
+                            className="absolute top-1 right-1 w-6 h-6 bg-google-red text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg hover:scale-110 transition-transform"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* 새로 선택한 이미지들 */}
+                      {previewUrls.map((url, index) => (
+                        <div key={`new-${index}`} className="relative aspect-square">
+                          <img
+                            src={url}
+                            alt={`새 이미지 ${index + 1}`}
+                            className="w-full h-full object-cover rounded-xl border-2 border-google-blue"
+                          />
+                          <div className="absolute top-1 left-1 px-2 py-0.5 bg-google-blue text-white text-xs rounded font-bold">
+                            NEW
+                          </div>
+                          <button
+                            onClick={() => removeNewImage(index)}
+                            className="absolute top-1 right-1 w-6 h-6 bg-google-red text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg hover:scale-110 transition-transform"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* 추가 버튼 */}
+                      {canAddMore && (
                         <button
-                          onClick={removeImage}
-                          className="absolute top-2 right-2 w-8 h-8 bg-google-red text-white rounded-full flex items-center justify-center font-bold shadow-lg hover:scale-110 transition-transform"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="aspect-square border-2 border-dashed border-gray-300 rounded-xl hover:border-google-blue hover:bg-blue-50 transition-all flex flex-col items-center justify-center"
                         >
-                          ✕
+                          <span className="text-2xl">➕</span>
+                          <p className="text-gray-500 font-bold text-xs mt-1">
+                            이미지 추가
+                          </p>
                         </button>
-                      </div>
-                    ) : (
+                      )}
+                    </div>
+
+                    {/* 빈 상태 */}
+                    {totalImageCount === 0 && (
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl hover:border-google-blue hover:bg-blue-50 transition-all"
@@ -357,7 +429,7 @@ export default function QTTopicsPage() {
                         <div className="text-center">
                           <span className="text-3xl">📷</span>
                           <p className="text-gray-500 font-bold mt-2">
-                            클릭하여 이미지 추가
+                            클릭하여 이미지 추가 (최대 10개)
                           </p>
                         </div>
                       </button>
@@ -406,6 +478,7 @@ export default function QTTopicsPage() {
                 <ul className="space-y-2">
                   {recentTopics.map((t) => {
                     const isSelected = t.date === selectedDate;
+                    const imageCount = t.image_urls?.length || 0;
                     return (
                       <li key={t.id}>
                         <button
@@ -422,9 +495,9 @@ export default function QTTopicsPage() {
                           <p className={`font-bold truncate ${isSelected ? "text-white" : "text-gray-800"}`}>
                             {t.title}
                           </p>
-                          {t.image_url && (
+                          {imageCount > 0 && (
                             <span className={`text-xs ${isSelected ? "text-white/70" : "text-gray-400"}`}>
-                              📷 이미지 포함
+                              📷 이미지 {imageCount}개
                             </span>
                           )}
                         </button>

@@ -26,6 +26,16 @@ interface TalentSetting {
   amount: number;
 }
 
+interface WeeklyVerse {
+  id: string;
+  reference_ko: string;
+  reference_en: string | null;
+  reference_fr: string | null;
+  verse_ko: string;
+  verse_en: string | null;
+  verse_fr: string | null;
+}
+
 export default function StudentDashboard() {
   const { user, churchId } = useAuth();
   const [team, setTeam] = useState<Team | null>(null);
@@ -33,6 +43,7 @@ export default function StudentDashboard() {
   const [talentSettings, setTalentSettings] = useState<TalentSetting[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [monthRecords, setMonthRecords] = useState<QuestRecord[]>([]);
+  const [weeklyVerse, setWeeklyVerse] = useState<WeeklyVerse | null>(null);
 
   const studentName = user?.name || "친구";
   const talent = (user as { talent?: number })?.talent || 0;
@@ -121,6 +132,16 @@ export default function StudentDashboard() {
         .eq("church_id", churchId);
 
       if (settingsData) setTalentSettings(settingsData as TalentSetting[]);
+
+      // 이번 주 암송 말씀
+      const { data: verseData } = await supabase
+        .from("weekly_verses")
+        .select("id, reference_ko, reference_en, reference_fr, verse_ko, verse_en, verse_fr")
+        .eq("church_id", churchId)
+        .eq("week_start", formatDate(sunday))
+        .single();
+
+      if (verseData) setWeeklyVerse(verseData as WeeklyVerse);
     };
 
     fetchData();
@@ -223,6 +244,49 @@ export default function StudentDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {/* 이번 주 암송 말씀 */}
+          {weeklyVerse && (
+            <Card className="border-2 border-google-green bg-green-50">
+              <CardContent className="py-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">✝️</span>
+                  <p className="font-black text-gray-800">이번 주 암송 말씀</p>
+                </div>
+
+                {/* 한국어 */}
+                <div className="p-3 bg-white rounded-xl mb-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm">🇰🇷</span>
+                    <p className="font-black text-google-green text-sm">{weeklyVerse.reference_ko}</p>
+                  </div>
+                  <p className="text-gray-700 text-sm whitespace-pre-wrap">{weeklyVerse.verse_ko}</p>
+                </div>
+
+                {/* 영어 */}
+                {weeklyVerse.reference_en && weeklyVerse.verse_en && (
+                  <div className="p-3 bg-white rounded-xl mb-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm">🇺🇸</span>
+                      <p className="font-black text-google-blue text-sm">{weeklyVerse.reference_en}</p>
+                    </div>
+                    <p className="text-gray-700 text-sm whitespace-pre-wrap">{weeklyVerse.verse_en}</p>
+                  </div>
+                )}
+
+                {/* 프랑스어 */}
+                {weeklyVerse.reference_fr && weeklyVerse.verse_fr && (
+                  <div className="p-3 bg-white rounded-xl">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm">🇫🇷</span>
+                      <p className="font-black text-google-red text-sm">{weeklyVerse.reference_fr}</p>
+                    </div>
+                    <p className="text-gray-700 text-sm whitespace-pre-wrap">{weeklyVerse.verse_fr}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* 암송 */}
           <Card className={`border-2 ${isQuestCompleted("recitation", thisSunday) ? "border-google-blue bg-blue-50" : "border-gray-200"}`}>

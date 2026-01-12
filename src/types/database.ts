@@ -98,7 +98,21 @@ export interface QTTopic {
   date: string;              // YYYY-MM-DD
   title: string;
   content: string;
-  image_url: string | null;
+  image_urls: string[];      // 여러 이미지 URL 배열
+  created_at: string;
+}
+
+// 주간 암송 말씀 (교사가 등록) - 다국어 지원
+export interface WeeklyVerse {
+  id: string;
+  church_id: string;
+  week_start: string;        // 주 시작일 (일요일) YYYY-MM-DD
+  reference_ko: string;      // 성경 구절 (한국어)
+  reference_en: string | null; // 성경 구절 (영어)
+  reference_fr: string | null; // 성경 구절 (프랑스어)
+  verse_ko: string;          // 말씀 내용 (한국어)
+  verse_en: string | null;   // 말씀 내용 (영어)
+  verse_fr: string | null;   // 말씀 내용 (프랑스어)
   created_at: string;
 }
 
@@ -173,6 +187,11 @@ export interface Database {
         Row: QTTopic;
         Insert: Omit<QTTopic, 'id' | 'created_at'>;
         Update: Partial<Omit<QTTopic, 'id' | 'created_at' | 'church_id'>>;
+      };
+      weekly_verses: {
+        Row: WeeklyVerse;
+        Insert: Omit<WeeklyVerse, 'id' | 'created_at'>;
+        Update: Partial<Omit<WeeklyVerse, 'id' | 'created_at' | 'church_id'>>;
       };
     };
   };

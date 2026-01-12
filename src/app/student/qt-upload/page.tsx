@@ -17,7 +17,7 @@ interface QTTopic {
   id: string;
   title: string;
   content: string;
-  image_url: string | null;
+  image_urls: string[];
 }
 
 export default function QTUploadPage() {
@@ -29,6 +29,7 @@ export default function QTUploadPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [talentAmount, setTalentAmount] = useState(0);
+  const [viewerImage, setViewerImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const today = new Date().toISOString().split("T")[0];
@@ -66,7 +67,7 @@ export default function QTUploadPage() {
       // 오늘 QT 주제 로드
       const { data: topicData } = await supabase
         .from("qt_topics")
-        .select("id, title, content, image_url")
+        .select("id, title, content, image_urls")
         .eq("church_id", churchId)
         .eq("date", today)
         .single();
@@ -316,13 +317,21 @@ export default function QTUploadPage() {
                 )}
               </div>
             </div>
-            {todayTopic.image_url && (
-              <div className="mt-3">
-                <img
-                  src={todayTopic.image_url}
-                  alt="QT 주제 이미지"
-                  className="w-full rounded-xl border-2 border-white"
-                />
+            {todayTopic.image_urls && todayTopic.image_urls.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {todayTopic.image_urls.map((url, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setViewerImage(url)}
+                    className="aspect-square rounded-xl overflow-hidden border-2 border-white hover:border-google-blue transition-all hover:scale-105"
+                  >
+                    <img
+                      src={url}
+                      alt={`QT 주제 이미지 ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
               </div>
             )}
           </CardContent>
@@ -436,6 +445,27 @@ export default function QTUploadPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* 이미지 뷰어 모달 */}
+      {viewerImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setViewerImage(null)}
+        >
+          <button
+            onClick={() => setViewerImage(null)}
+            className="absolute top-4 right-4 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-2xl font-bold transition-colors"
+          >
+            ✕
+          </button>
+          <img
+            src={viewerImage}
+            alt="확대 이미지"
+            className="max-w-full max-h-full object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

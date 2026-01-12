@@ -16,6 +16,7 @@ const navItems: NavItem[] = [
   { href: "/admin/dashboard", label: "대시보드", icon: "📊" },
   { href: "/admin/students", label: "학생 관리", icon: "👥" },
   { href: "/admin/attendance", label: "출석/암송 체크", icon: "✅" },
+  { href: "/admin/weekly-verse", label: "암송 말씀 등록", icon: "✝️" },
   { href: "/admin/qt-topics", label: "QT 주제 등록", icon: "📖" },
   { href: "/admin/qt-approval", label: "QT 승인", icon: "📷" },
   { href: "/admin/talent", label: "달란트 관리", icon: "💰" },
