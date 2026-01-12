@@ -91,6 +91,17 @@ export interface GameSession {
   created_at: string;
 }
 
+// QT 주제 (교사가 등록)
+export interface QTTopic {
+  id: string;
+  church_id: string;
+  date: string;              // YYYY-MM-DD
+  title: string;
+  content: string;
+  image_url: string | null;
+  created_at: string;
+}
+
 // ============================================
 // 관계 포함 타입 (조인용)
 // ============================================
@@ -157,6 +168,11 @@ export interface Database {
         Row: GameSession;
         Insert: Omit<GameSession, 'id' | 'created_at'>;
         Update: Partial<Omit<GameSession, 'id' | 'created_at' | 'church_id'>>;
+      };
+      qt_topics: {
+        Row: QTTopic;
+        Insert: Omit<QTTopic, 'id' | 'created_at'>;
+        Update: Partial<Omit<QTTopic, 'id' | 'created_at' | 'church_id'>>;
       };
     };
   };

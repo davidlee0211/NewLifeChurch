@@ -13,9 +13,17 @@ interface TodayRecord {
   photo_url: string | null;
 }
 
+interface QTTopic {
+  id: string;
+  title: string;
+  content: string;
+  image_url: string | null;
+}
+
 export default function QTUploadPage() {
   const { user, churchId } = useAuth();
   const [todayRecord, setTodayRecord] = useState<TodayRecord | null>(null);
+  const [todayTopic, setTodayTopic] = useState<QTTopic | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -53,6 +61,18 @@ export default function QTUploadPage() {
 
       if (settingData) {
         setTalentAmount((settingData as { amount: number }).amount);
+      }
+
+      // 오늘 QT 주제 로드
+      const { data: topicData } = await supabase
+        .from("qt_topics")
+        .select("id, title, content, image_url")
+        .eq("church_id", churchId)
+        .eq("date", today)
+        .single();
+
+      if (topicData) {
+        setTodayTopic(topicData as QTTopic);
       }
     };
 
@@ -279,6 +299,35 @@ export default function QTUploadPage() {
         <span>📷</span> QT 인증
       </h2>
       <p className="text-gray-500 text-sm">오늘 QT한 사진을 찍어 올려주세요!</p>
+
+      {/* 오늘 QT 주제 */}
+      {todayTopic && (
+        <Card className="border-2 border-google-blue bg-blue-50">
+          <CardContent className="py-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-google-blue rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="text-xl">📖</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-google-blue font-bold mb-1">오늘의 QT 주제</p>
+                <p className="font-black text-gray-800">{todayTopic.title}</p>
+                {todayTopic.content && (
+                  <p className="text-gray-600 text-sm mt-1 whitespace-pre-wrap">{todayTopic.content}</p>
+                )}
+              </div>
+            </div>
+            {todayTopic.image_url && (
+              <div className="mt-3">
+                <img
+                  src={todayTopic.image_url}
+                  alt="QT 주제 이미지"
+                  className="w-full rounded-xl border-2 border-white"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* 히든 파일 인풋 */}
       <input
