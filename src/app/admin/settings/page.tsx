@@ -95,7 +95,7 @@ export default function SettingsPage() {
               <Button variant="secondary" className="w-full">
                 출석 기록 내보내기 (CSV)
               </Button>
-              <Button variant="danger" className="w-full">
+              <Button variant="red" className="w-full">
                 이번 학기 데이터 초기화
               </Button>
             </div>

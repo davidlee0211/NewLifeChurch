@@ -62,7 +62,7 @@ export default function QTUploadPage() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="오늘 QT를 통해 느낀 점을 작성해주세요 ✨"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200 min-h-[200px] hover:border-primary/50"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200 min-h-[200px] hover:border-primary/50"
                 required
               />
             </div>
@@ -71,7 +71,7 @@ export default function QTUploadPage() {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 이미지 첨부 (선택)
               </label>
-              <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
+              <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
                 <input
                   type="file"
                   accept="image/*"
@@ -110,7 +110,7 @@ export default function QTUploadPage() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
-            <li className="p-4 bg-background-alt rounded-2xl">
+            <li className="p-4 bg-gray-50 rounded-lg">
               <div className="flex justify-between items-start">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 bg-success/20 rounded-xl flex items-center justify-center text-xl">
@@ -126,10 +126,10 @@ export default function QTUploadPage() {
                 </span>
               </div>
             </li>
-            <li className="p-4 bg-background-alt rounded-2xl">
+            <li className="p-4 bg-gray-50 rounded-lg">
               <div className="flex justify-between items-start">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-xl">
+                  <div className="w-10 h-10 bg-google-blue/20 rounded-xl flex items-center justify-center text-xl">
                     ⏳
                   </div>
                   <div>
@@ -137,7 +137,7 @@ export default function QTUploadPage() {
                     <p className="text-sm text-gray-500 mt-1">2024년 1월 6일</p>
                   </div>
                 </div>
-                <span className="px-3 py-1 text-xs font-semibold bg-primary/20 text-primary-dark rounded-full">
+                <span className="px-3 py-1 text-xs font-semibold bg-google-blue/20 text-gray-700 rounded-full">
                   대기 중
                 </span>
               </div>

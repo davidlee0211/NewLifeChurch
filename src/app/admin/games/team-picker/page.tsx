@@ -53,7 +53,7 @@ export default function TeamPickerPage() {
           </CardHeader>
           <CardContent>
             <div
-              className={`w-64 h-64 mx-auto rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-6 ${
+              className={`w-64 h-64 mx-auto rounded-xl bg-google-blue border-b-4 border-blue-700 flex items-center justify-center mb-6 shadow-roblox ${
                 isSpinning ? "animate-pulse" : ""
               }`}
             >
@@ -92,13 +92,13 @@ export default function TeamPickerPage() {
                   <li
                     key={index}
                     className={`p-3 rounded-lg flex items-center gap-3 ${
-                      index === 0 ? "bg-indigo-50 border border-indigo-200" : "bg-gray-50"
+                      index === 0 ? "bg-blue-50 border-2 border-google-blue" : "bg-gray-50"
                     }`}
                   >
                     <span
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium ${
                         index === 0
-                          ? "bg-indigo-500 text-white"
+                          ? "bg-google-blue text-white"
                           : "bg-gray-300 text-gray-600"
                       }`}
                     >
@@ -122,9 +122,9 @@ export default function TeamPickerPage() {
             {allStudents.map((student) => (
               <span
                 key={student}
-                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
                   history.includes(student)
-                    ? "bg-indigo-100 text-indigo-700"
+                    ? "bg-blue-100 text-google-blue"
                     : "bg-gray-100 text-gray-700"
                 }`}
               >

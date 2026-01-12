@@ -13,13 +13,13 @@ export default function MyTeamPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+        <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
           <span>👥</span> 내 팀
         </h2>
-        <p className="text-gray-500 mt-1">팀원들과 함께 달란트를 모아요!</p>
+        <p className="text-gray-500 mt-1 font-semibold">팀원들과 함께 달란트를 모아요!</p>
       </div>
 
-      <Card variant="gold" hover>
+      <Card variant="blue" hover>
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <span className="text-2xl">⭐</span> 믿음팀
@@ -28,17 +28,17 @@ export default function MyTeamPage() {
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-white/70">팀 총 달란트</p>
+              <p className="text-sm text-white/70 font-semibold">팀 총 달란트</p>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-3xl">🪙</span>
-                <p className="text-4xl font-bold">550</p>
+                <p className="text-4xl font-black text-white">550</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-white/70">팀 순위</p>
+              <p className="text-sm text-white/70 font-semibold">팀 순위</p>
               <div className="flex items-center gap-2 mt-1 justify-end">
                 <span className="text-3xl">🏆</span>
-                <p className="text-4xl font-bold">2위</p>
+                <p className="text-4xl font-black text-white">2위</p>
               </div>
             </div>
           </div>
@@ -56,25 +56,25 @@ export default function MyTeamPage() {
             {teamMembers.map((member) => (
               <li
                 key={member.id}
-                className="flex items-center justify-between p-4 bg-background-alt rounded-2xl"
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border-2 border-gray-100"
               >
                 <div className="flex items-center gap-4">
                   <span
-                    className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold text-lg ${
+                    className={`w-10 h-10 flex items-center justify-center rounded-lg font-black text-lg ${
                       member.rank === 1
-                        ? "bg-gradient-to-br from-yellow-300 to-yellow-500 text-yellow-900"
+                        ? "bg-google-yellow text-gray-800 border-b-2 border-yellow-600"
                         : member.rank === 2
-                        ? "bg-gradient-to-br from-gray-200 to-gray-400 text-gray-700"
+                        ? "bg-gray-200 text-gray-700 border-b-2 border-gray-400"
                         : member.rank === 3
-                        ? "bg-gradient-to-br from-orange-300 to-orange-500 text-orange-900"
+                        ? "bg-orange-200 text-orange-800 border-b-2 border-orange-400"
                         : "bg-gray-100 text-gray-600"
                     }`}
                   >
                     {member.rank === 1 ? "🥇" : member.rank === 2 ? "🥈" : member.rank === 3 ? "🥉" : member.rank}
                   </span>
-                  <span className="font-semibold text-gray-800">{member.name}</span>
+                  <span className="font-bold text-gray-800">{member.name}</span>
                 </div>
-                <span className="font-bold text-primary-dark bg-primary/10 px-4 py-2 rounded-full">
+                <span className="font-bold text-gray-700 bg-google-yellow/30 px-4 py-2 rounded-lg">
                   {member.talent} 🪙
                 </span>
               </li>
@@ -91,32 +91,32 @@ export default function MyTeamPage() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
-            <li className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-300 rounded-2xl">
+            <li className="flex items-center justify-between p-4 bg-google-yellow/20 border-2 border-google-yellow rounded-lg">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">🥇</span>
                 <div>
                   <span className="font-bold text-gray-800">사랑팀</span>
-                  <p className="text-sm text-gray-500">1등 달성!</p>
+                  <p className="text-sm text-gray-500 font-semibold">1등 달성!</p>
                 </div>
               </div>
-              <span className="font-bold text-primary-dark bg-primary/10 px-4 py-2 rounded-full">620 🪙</span>
+              <span className="font-bold text-gray-700 bg-google-yellow/50 px-4 py-2 rounded-lg">620 🪙</span>
             </li>
-            <li className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-primary/10 border-2 border-primary/30 rounded-2xl">
+            <li className="flex items-center justify-between p-4 bg-google-blue/10 border-2 border-google-blue/50 rounded-lg">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">🥈</span>
                 <div>
                   <span className="font-bold text-gray-800">믿음팀</span>
-                  <span className="ml-2 text-xs bg-accent text-white px-2 py-0.5 rounded-full">내 팀</span>
+                  <span className="ml-2 text-xs bg-google-blue text-white px-2 py-0.5 rounded font-bold">내 팀</span>
                 </div>
               </div>
-              <span className="font-bold text-primary-dark bg-primary/10 px-4 py-2 rounded-full">550 🪙</span>
+              <span className="font-bold text-gray-700 bg-google-yellow/30 px-4 py-2 rounded-lg">550 🪙</span>
             </li>
-            <li className="flex items-center justify-between p-4 bg-background-alt rounded-2xl">
+            <li className="flex items-center justify-between p-4 bg-gray-50 border-2 border-gray-100 rounded-lg">
               <div className="flex items-center gap-3">
                 <span className="text-3xl">🥉</span>
                 <span className="font-bold text-gray-800">소망팀</span>
               </div>
-              <span className="font-bold text-primary-dark bg-primary/10 px-4 py-2 rounded-full">480 🪙</span>
+              <span className="font-bold text-gray-700 bg-google-yellow/30 px-4 py-2 rounded-lg">480 🪙</span>
             </li>
           </ul>
         </CardContent>

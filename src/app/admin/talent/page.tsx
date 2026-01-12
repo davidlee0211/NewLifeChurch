@@ -54,7 +54,7 @@ export default function TalentPage() {
                   key={student.id}
                   className={`flex items-center justify-between p-4 rounded-lg cursor-pointer transition-colors ${
                     selectedStudent?.id === student.id
-                      ? "bg-indigo-50 border border-indigo-200"
+                      ? "bg-blue-50 border-2 border-google-blue"
                       : "bg-gray-50 hover:bg-gray-100"
                   }`}
                   onClick={() => setSelectedStudent(student)}
@@ -63,7 +63,7 @@ export default function TalentPage() {
                     <p className="font-medium text-gray-800">{student.name}</p>
                     <p className="text-sm text-gray-500">{student.team}</p>
                   </div>
-                  <span className="font-semibold text-indigo-600">{student.talent} 달란트</span>
+                  <span className="font-semibold text-google-blue">{student.talent} 달란트</span>
                 </li>
               ))}
             </ul>
@@ -77,10 +77,10 @@ export default function TalentPage() {
           <CardContent>
             {selectedStudent ? (
               <div className="space-y-4">
-                <div className="p-4 bg-indigo-50 rounded-lg">
+                <div className="p-4 bg-blue-50 rounded-lg">
                   <p className="text-sm text-gray-500">선택된 학생</p>
                   <p className="text-xl font-bold text-gray-800">{selectedStudent.name}</p>
-                  <p className="text-indigo-600">현재 잔액: {selectedStudent.talent} 달란트</p>
+                  <p className="text-google-blue">현재 잔액: {selectedStudent.talent} 달란트</p>
                 </div>
 
                 <div>
@@ -111,7 +111,7 @@ export default function TalentPage() {
                   <Button onClick={handleGiveTalent} className="flex-1">
                     지급
                   </Button>
-                  <Button variant="danger" onClick={handleTakeTalent} className="flex-1">
+                  <Button variant="red" onClick={handleTakeTalent} className="flex-1">
                     차감
                   </Button>
                 </div>

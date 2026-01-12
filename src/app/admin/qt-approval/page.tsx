@@ -66,7 +66,7 @@ export default function QTApprovalPage() {
                     key={qt.id}
                     className={`p-4 rounded-lg cursor-pointer transition-colors ${
                       selectedQT?.id === qt.id
-                        ? "bg-indigo-50 border border-indigo-200"
+                        ? "bg-blue-50 border-2 border-google-blue"
                         : "bg-gray-50 hover:bg-gray-100"
                     }`}
                     onClick={() => setSelectedQT(qt)}
@@ -119,7 +119,7 @@ export default function QTApprovalPage() {
                     승인 (+20 달란트)
                   </Button>
                   <Button
-                    variant="danger"
+                    variant="red"
                     onClick={() => handleReject(selectedQT.id)}
                     className="flex-1"
                   >

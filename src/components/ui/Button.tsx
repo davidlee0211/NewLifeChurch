@@ -1,20 +1,28 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "danger" | "ghost" | "accent";
+  variant?: "primary" | "secondary" | "red" | "yellow" | "green" | "ghost";
   size?: "sm" | "md" | "lg";
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className = "", variant = "primary", size = "md", children, ...props }, ref) => {
-    const baseStyles = "font-semibold rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 active:translate-y-0";
+    // 로블록스 스타일 베이스
+    const baseStyles = `
+      font-bold rounded-lg transition-all duration-100
+      focus:outline-none focus:ring-2 focus:ring-offset-2
+      disabled:opacity-50 disabled:cursor-not-allowed
+      shadow-roblox hover:brightness-110
+      active:shadow-roblox-pressed active:translate-y-1
+    `;
 
     const variants = {
-      primary: "bg-primary text-white hover:bg-primary-dark focus:ring-primary shadow-soft hover:shadow-soft-lg",
-      secondary: "bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white focus:ring-primary",
-      danger: "bg-error text-white hover:bg-red-600 focus:ring-error shadow-md",
-      ghost: "bg-transparent text-gray-600 hover:bg-background-alt focus:ring-primary",
-      accent: "bg-accent text-white hover:bg-accent-light focus:ring-accent shadow-md",
+      primary: "bg-primary text-white border-b-4 border-primary-dark focus:ring-primary",
+      secondary: "bg-white text-gray-700 border-2 border-gray-300 border-b-4 focus:ring-gray-400",
+      red: "bg-google-red text-white border-b-4 border-red-700 focus:ring-red-400",
+      yellow: "bg-google-yellow text-gray-800 border-b-4 border-yellow-600 focus:ring-yellow-400",
+      green: "bg-google-green text-white border-b-4 border-green-700 focus:ring-green-400",
+      ghost: "bg-transparent text-gray-600 hover:bg-gray-100 border-none shadow-none focus:ring-gray-400",
     };
 
     const sizes = {

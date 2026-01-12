@@ -54,11 +54,11 @@ export default function StudentsPage() {
                 <tr key={student.id} className="border-b last:border-b-0 hover:bg-gray-50">
                   <td className="py-3 px-4">{student.name}</td>
                   <td className="py-3 px-4">
-                    <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
+                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-google-blue rounded-full">
                       {student.team}
                     </span>
                   </td>
-                  <td className="py-3 px-4 font-medium text-indigo-600">{student.talent}</td>
+                  <td className="py-3 px-4 font-medium text-google-blue">{student.talent}</td>
                   <td className="py-3 px-4">{student.attendance}%</td>
                   <td className="py-3 px-4 text-right">
                     <Button variant="ghost" size="sm">수정</Button>

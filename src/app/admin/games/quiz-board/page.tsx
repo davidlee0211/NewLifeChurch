@@ -50,12 +50,12 @@ export default function QuizBoardPage() {
             key={quiz.id}
             onClick={() => selectQuiz(quiz)}
             disabled={usedQuizzes.includes(quiz.id)}
-            className={`aspect-square rounded-xl font-bold text-2xl transition-all ${
+            className={`aspect-square rounded-xl font-bold text-2xl transition-all border-b-4 ${
               usedQuizzes.includes(quiz.id)
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300"
                 : currentQuiz?.id === quiz.id
-                ? "bg-indigo-600 text-white scale-105"
-                : "bg-gradient-to-br from-indigo-500 to-purple-600 text-white hover:scale-105"
+                ? "bg-google-blue text-white scale-105 border-blue-700"
+                : "bg-google-blue text-white hover:scale-105 border-blue-700 shadow-roblox"
             }`}
           >
             {quiz.points}점
@@ -100,7 +100,7 @@ export default function QuizBoardPage() {
       )}
 
       {usedQuizzes.length === mockQuizzes.length && (
-        <Card className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
+        <Card className="bg-google-yellow text-gray-800 border-b-4 border-yellow-600">
           <CardContent className="py-8 text-center">
             <p className="text-3xl font-bold mb-4">모든 문제 완료!</p>
             <Button variant="secondary" onClick={resetGame}>

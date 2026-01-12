@@ -52,7 +52,7 @@ export default function AttendancePage() {
         <Card hover className="border-l-4 border-l-success">
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="w-14 h-14 mx-auto bg-success/20 rounded-2xl flex items-center justify-center mb-2">
+              <div className="w-14 h-14 mx-auto bg-success/20 rounded-lg flex items-center justify-center mb-2">
                 <span className="text-2xl">😊</span>
               </div>
               <p className="text-4xl font-bold text-success">{presentCount}</p>
@@ -63,7 +63,7 @@ export default function AttendancePage() {
         <Card hover className="border-l-4 border-l-error">
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="w-14 h-14 mx-auto bg-error/20 rounded-2xl flex items-center justify-center mb-2">
+              <div className="w-14 h-14 mx-auto bg-error/20 rounded-lg flex items-center justify-center mb-2">
                 <span className="text-2xl">😢</span>
               </div>
               <p className="text-4xl font-bold text-error">{students.length - presentCount}</p>
@@ -71,10 +71,10 @@ export default function AttendancePage() {
             </div>
           </CardContent>
         </Card>
-        <Card hover className="border-l-4 border-l-accent">
+        <Card hover className="border-l-4 border-l-google-blue">
           <CardContent className="pt-6">
             <div className="text-center">
-              <div className="w-14 h-14 mx-auto bg-accent/20 rounded-2xl flex items-center justify-center mb-2">
+              <div className="w-14 h-14 mx-auto bg-google-blue/20 rounded-lg flex items-center justify-center mb-2">
                 <span className="text-2xl">👨‍🎓</span>
               </div>
               <p className="text-4xl font-bold text-gray-800">{students.length}</p>
@@ -96,10 +96,10 @@ export default function AttendancePage() {
             {students.map((student) => (
               <li
                 key={student.id}
-                className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-200 ${
+                className={`flex items-center justify-between p-4 rounded-lg cursor-pointer transition-all duration-200 ${
                   student.isPresent
                     ? "bg-success/10 border-2 border-success/30 shadow-sm"
-                    : "bg-background-alt hover:bg-background-alt/80 border-2 border-transparent"
+                    : "bg-gray-50 hover:bg-gray-50/80 border-2 border-transparent"
                 }`}
                 onClick={() => toggleAttendance(student.id)}
               >

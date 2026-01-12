@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import type { Student, Admin, Church } from "@/types/database";
 
 // 학생 사용자 타입
@@ -18,9 +18,26 @@ export interface AdminUser extends Admin {
 // 통합 사용자 타입
 export type AuthUser = StudentUser | AdminUser | null;
 
+// Context 타입
+interface AuthContextType {
+  user: AuthUser;
+  loading: boolean;
+  isAuthenticated: boolean;
+  isStudent: boolean;
+  isAdmin: boolean;
+  churchId: string | undefined;
+  church: Church | undefined;
+  setAuthUser: (user: AuthUser) => void;
+  signOut: () => void;
+}
+
 const AUTH_STORAGE_KEY = "user";
 
-export function useAuth() {
+// Context 생성
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Provider 컴포넌트
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,7 +57,7 @@ export function useAuth() {
     }
   }, []);
 
-  // 로그인 (로그인 페이지에서 직접 처리하므로 여기서는 상태만 업데이트)
+  // 사용자 설정
   const setAuthUser = useCallback((authUser: AuthUser) => {
     setUser(authUser);
     if (authUser) {
@@ -57,7 +74,7 @@ export function useAuth() {
     window.location.href = "/login";
   }, []);
 
-  return {
+  const value: AuthContextType = {
     user,
     loading,
     isAuthenticated: !!user,
@@ -68,4 +85,15 @@ export function useAuth() {
     setAuthUser,
     signOut,
   };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// Hook으로 사용
+export function useAuthContext() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuthContext must be used within an AuthProvider");
+  }
+  return context;
 }

@@ -147,7 +147,7 @@ export default function QuizzesPage() {
                         </span>
                       ))}
                     </div>
-                    <p className="text-sm text-indigo-600">보상: {quiz.talentReward} 달란트</p>
+                    <p className="text-sm text-google-blue">보상: {quiz.talentReward} 달란트</p>
                   </div>
 
                   <div className="flex gap-2">
