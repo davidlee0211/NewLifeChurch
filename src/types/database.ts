@@ -35,8 +35,7 @@ export interface Admin {
   id: string;
   church_id: string;
   name: string;
-  login_id: string;          // 로그인 아이디
-  password: string;          // 해시된 비밀번호
+  login_id: string;          // 관리자 아이디 (비밀번호 없음)
   is_super: boolean;         // 슈퍼관리자 여부
   created_at: string;
 }

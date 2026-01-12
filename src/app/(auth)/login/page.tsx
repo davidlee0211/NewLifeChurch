@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { supabase } from "@/lib/supabase";
@@ -13,6 +14,9 @@ export default function LoginPage() {
   const [churchCode, setChurchCode] = useState("");
   const [loginCode, setLoginCode] = useState("");
   const [error, setError] = useState("");
+
+  // 숫자만 있으면 학생, 문자가 포함되면 관리자
+  const isStudentCode = (code: string) => /^\d+$/.test(code);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,42 +39,43 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. 학생 로그인 시도 (6자리 코드)
-      const { data: studentData } = await supabase
-        .from("students")
-        .select("*")
-        .eq("church_id", church.id)
-        .eq("login_code", loginCode)
-        .single();
+      if (isStudentCode(loginCode)) {
+        // 2. 학생 로그인 시도 (숫자 코드: 001~999)
+        const { data: studentData } = await supabase
+          .from("students")
+          .select("*")
+          .eq("church_id", church.id)
+          .eq("login_code", loginCode)
+          .single();
 
-      const student = studentData as Student | null;
+        const student = studentData as Student | null;
 
-      if (student) {
-        // 학생 로그인 성공 - 세션 저장
-        localStorage.setItem("user", JSON.stringify({ ...student, role: "student", church }));
-        router.push("/student/dashboard");
-        return;
+        if (student) {
+          localStorage.setItem("user", JSON.stringify({ ...student, role: "student", church }));
+          router.push("/student/dashboard");
+          return;
+        }
+
+        setError("존재하지 않는 학생 코드입니다.");
+      } else {
+        // 3. 관리자 로그인 시도 (문자 아이디)
+        const { data: adminData } = await supabase
+          .from("admins")
+          .select("*")
+          .eq("church_id", church.id)
+          .eq("login_id", loginCode.toLowerCase())
+          .single();
+
+        const admin = adminData as Admin | null;
+
+        if (admin) {
+          localStorage.setItem("user", JSON.stringify({ ...admin, role: "admin", church }));
+          router.push("/admin/dashboard");
+          return;
+        }
+
+        setError("존재하지 않는 교사 아이디입니다.");
       }
-
-      // 3. 관리자 로그인 시도 (아이디/비밀번호)
-      const { data: adminData } = await supabase
-        .from("admins")
-        .select("*")
-        .eq("church_id", church.id)
-        .eq("login_id", loginCode)
-        .single();
-
-      const admin = adminData as Admin | null;
-
-      if (admin) {
-        // 비밀번호 확인 (현재는 평문 비교, 운영 시 bcrypt 사용)
-        // TODO: 별도 비밀번호 필드 추가 필요
-        localStorage.setItem("user", JSON.stringify({ ...admin, role: "admin", church }));
-        router.push("/admin/dashboard");
-        return;
-      }
-
-      setError("로그인 정보가 올바르지 않습니다.");
     } catch {
       setError("로그인 중 오류가 발생했습니다.");
     } finally {
@@ -131,7 +136,7 @@ export default function LoginPage() {
               type="text"
               value={loginCode}
               onChange={(e) => setLoginCode(e.target.value)}
-              placeholder="학생: 6자리 코드 / 교사: 아이디"
+              placeholder="학생: 3자리 코드 / 교사: 아이디"
               required
             />
           </div>
@@ -154,6 +159,12 @@ export default function LoginPage() {
               </span>
             )}
           </Button>
+
+          <div className="text-center">
+            <Link href="/register" className="text-sm text-google-blue hover:underline">
+              교회 등록이 필요하신가요?
+            </Link>
+          </div>
         </form>
       </div>
     </div>
