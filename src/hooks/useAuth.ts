@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { Student, Admin, Church } from "@/types/database";
 
 // 학생 사용자 타입
@@ -21,6 +22,7 @@ export type AuthUser = StudentUser | AdminUser | null;
 const AUTH_STORAGE_KEY = "user";
 
 export function useAuth() {
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,8 +56,8 @@ export function useAuth() {
   const signOut = useCallback(() => {
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
-    window.location.href = "/login";
-  }, []);
+    router.push("/login");
+  }, [router]);
 
   return {
     user,
