@@ -265,73 +265,84 @@ export default function TalentPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-        <Coins className="w-6 h-6 text-google-yellow" />
+    <div className="space-y-4 sm:space-y-6">
+      <h2 className="text-lg sm:text-2xl font-bold text-gray-800 flex items-center gap-2 sm:gap-3">
+        <Coins className="w-5 h-5 sm:w-6 sm:h-6 text-google-yellow" />
         달란트 관리
       </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-google-blue" />
-              학생 선택
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {students.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                등록된 학생이 없습니다.
-              </div>
-            ) : (
-              <ul className="space-y-2 max-h-96 overflow-y-auto">
-                {students.map((student) => (
-                  <li
-                    key={student.id}
-                    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${
-                      selectedStudent?.id === student.id
-                        ? "bg-google-yellow/10 shadow-sm ring-2 ring-google-yellow"
-                        : "bg-gray-50 hover:bg-gray-100"
-                    }`}
-                    onClick={() => setSelectedStudent(student)}
-                  >
-                    <div>
-                      <p className="font-bold text-gray-800">{student.name}</p>
-                      <p className="text-sm text-gray-500">{student.team?.name || "팀 없음"}</p>
-                    </div>
-                    <span className="font-bold text-google-yellow flex items-center gap-1">
-                      {student.talent}
-                      <Coins className="w-4 h-4" />
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 gap-4 sm:gap-6">
+        {/* 학생 선택 카드 - 모바일에서 학생 선택 후에도 표시 (CSS로 제어) */}
+        <Card className={`rounded-2xl shadow-md ${selectedStudent ? 'hidden sm:block' : ''}`}>
+            <CardHeader className="px-3 sm:px-6">
+              <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-google-blue" />
+                학생 선택
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-2 sm:px-6">
+              {students.length === 0 ? (
+                <div className="text-center py-6 sm:py-8 text-gray-500 text-sm">
+                  등록된 학생이 없습니다.
+                </div>
+              ) : (
+                <ul className="space-y-1.5 sm:space-y-2 max-h-64 sm:max-h-96 overflow-y-auto">
+                  {students.map((student) => (
+                    <li
+                      key={student.id}
+                      className={`flex items-center justify-between p-3 sm:p-4 rounded-xl sm:rounded-2xl cursor-pointer transition-all ${
+                        selectedStudent?.id === student.id
+                          ? "bg-google-yellow/10 shadow-sm ring-2 ring-google-yellow"
+                          : "bg-gray-50 hover:bg-gray-100"
+                      }`}
+                      onClick={() => setSelectedStudent(student)}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-800 text-sm sm:text-base truncate">{student.name}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 truncate">{student.team?.name || "팀 없음"}</p>
+                      </div>
+                      <span className="font-bold text-google-yellow flex items-center gap-0.5 sm:gap-1 text-sm sm:text-base flex-shrink-0">
+                        {student.talent}
+                        <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
 
         <Card className="rounded-2xl shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HandCoins className="w-5 h-5 text-google-yellow" />
-              달란트 지급/차감
+          <CardHeader className="px-3 sm:px-6">
+            <CardTitle className="flex items-center justify-between text-sm sm:text-base">
+              <span className="flex items-center gap-2">
+                <HandCoins className="w-4 h-4 sm:w-5 sm:h-5 text-google-yellow" />
+                달란트 지급/차감
+              </span>
+              {selectedStudent && (
+                <button
+                  onClick={() => setSelectedStudent(null)}
+                  className="sm:hidden text-xs text-google-blue font-bold"
+                >
+                  다른 학생 선택
+                </button>
+              )}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             {selectedStudent ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-google-yellow/10 rounded-2xl">
-                  <p className="text-sm text-gray-500">선택된 학생</p>
-                  <p className="text-xl font-bold text-gray-800">{selectedStudent.name}</p>
-                  <p className="text-google-yellow font-bold flex items-center gap-1">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="p-3 sm:p-4 bg-google-yellow/10 rounded-xl sm:rounded-2xl">
+                  <p className="text-xs sm:text-sm text-gray-500">선택된 학생</p>
+                  <p className="text-lg sm:text-xl font-bold text-gray-800">{selectedStudent.name}</p>
+                  <p className="text-google-yellow font-bold flex items-center gap-1 text-sm sm:text-base">
                     현재 잔액: {selectedStudent.talent}
-                    <Coins className="w-4 h-4" />
+                    <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">
                     달란트 수량
                   </label>
                   <Input
@@ -340,31 +351,33 @@ export default function TalentPage() {
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="숫자 입력"
                     min="1"
+                    className="text-sm"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-1.5 sm:mb-2">
                     사유
                   </label>
                   <Input
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="지급/차감 사유를 입력하세요"
+                    className="text-sm"
                   />
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                   <Button
                     onClick={handleGiveTalent}
                     disabled={isProcessing}
                     variant="green"
-                    className="flex-1 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    className="flex-1 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1 sm:gap-2 text-sm"
                   >
                     {isProcessing ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        처리 중...
+                        <span className="hidden sm:inline">처리 중...</span>
                       </>
                     ) : (
                       "지급"
@@ -374,18 +387,18 @@ export default function TalentPage() {
                     variant="red"
                     onClick={handleTakeTalent}
                     disabled={isProcessing}
-                    className="flex-1 rounded-xl shadow-md hover:shadow-lg transition-all"
+                    className="flex-1 rounded-xl shadow-md hover:shadow-lg transition-all text-sm"
                   >
                     차감
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-                  <Hand className="w-8 h-8 text-gray-400" />
+              <div className="text-center py-6 sm:py-8">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gray-100 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4">
+                  <Hand className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500 font-bold">왼쪽 목록에서 학생을 선택하세요.</p>
+                <p className="text-gray-500 font-bold text-sm">위 목록에서 학생을 선택하세요.</p>
               </div>
             )}
           </CardContent>
@@ -393,55 +406,85 @@ export default function TalentPage() {
       </div>
 
       <Card className="rounded-2xl shadow-md">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="w-5 h-5 text-gray-600" />
+        <CardHeader className="px-3 sm:px-6">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <History className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             최근 달란트 거래 내역
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 sm:px-6">
           {recentHistory.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-6 sm:py-8 text-gray-500 text-sm">
               거래 내역이 없습니다.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-bold text-gray-600">학생</th>
-                    <th className="text-left py-3 px-4 font-bold text-gray-600">유형</th>
-                    <th className="text-left py-3 px-4 font-bold text-gray-600">금액</th>
-                    <th className="text-left py-3 px-4 font-bold text-gray-600">날짜</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentHistory.map((history) => (
-                    <tr key={history.id} className="border-b hover:bg-gray-50 transition-colors">
-                      <td className="py-3 px-4 font-medium">{history.student.name}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
-                          history.type === "attendance" ? "bg-google-green/10 text-google-green" :
-                          history.type === "qt" ? "bg-google-red/10 text-google-red" :
-                          history.type === "recitation" ? "bg-google-yellow/10 text-google-yellow" :
-                          "bg-gray-100 text-gray-700"
-                        }`}>
-                          {getTypeLabel(history.type)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`font-bold ${
-                          history.talent_earned >= 0 ? "text-google-green" : "text-google-red"
-                        }`}>
-                          {history.talent_earned >= 0 ? "+" : ""}{history.talent_earned}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-gray-500">{formatDate(history.date)}</td>
+            <>
+              {/* 데스크톱 테이블 */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4 font-bold text-gray-600">학생</th>
+                      <th className="text-left py-3 px-4 font-bold text-gray-600">유형</th>
+                      <th className="text-left py-3 px-4 font-bold text-gray-600">금액</th>
+                      <th className="text-left py-3 px-4 font-bold text-gray-600">날짜</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {recentHistory.map((history) => (
+                      <tr key={history.id} className="border-b hover:bg-gray-50 transition-colors">
+                        <td className="py-3 px-4 font-medium">{history.student.name}</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                            history.type === "attendance" ? "bg-google-green/10 text-google-green" :
+                            history.type === "qt" ? "bg-google-red/10 text-google-red" :
+                            history.type === "recitation" ? "bg-google-yellow/10 text-google-yellow" :
+                            "bg-gray-100 text-gray-700"
+                          }`}>
+                            {getTypeLabel(history.type)}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`font-bold ${
+                            history.talent_earned >= 0 ? "text-google-green" : "text-google-red"
+                          }`}>
+                            {history.talent_earned >= 0 ? "+" : ""}{history.talent_earned}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-gray-500">{formatDate(history.date)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* 모바일 카드 리스트 */}
+              <div className="sm:hidden space-y-2">
+                {recentHistory.map((history) => (
+                  <div key={history.id} className="p-3 bg-gray-50 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full flex-shrink-0 ${
+                        history.type === "attendance" ? "bg-google-green/10 text-google-green" :
+                        history.type === "qt" ? "bg-google-red/10 text-google-red" :
+                        history.type === "recitation" ? "bg-google-yellow/10 text-google-yellow" :
+                        "bg-gray-100 text-gray-700"
+                      }`}>
+                        {getTypeLabel(history.type)}
+                      </span>
+                      <span className="font-bold text-gray-800 text-sm truncate">{history.student.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={`font-bold text-sm ${
+                        history.talent_earned >= 0 ? "text-google-green" : "text-google-red"
+                      }`}>
+                        {history.talent_earned >= 0 ? "+" : ""}{history.talent_earned}
+                      </span>
+                      <span className="text-[10px] text-gray-400">{formatDate(history.date)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
