@@ -79,6 +79,7 @@ export default function AdminLayout({
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
     pathname.startsWith("/admin/games") ? "/admin/games" : null
   );
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   // 권한 체크: 관리자가 아니면 리다이렉트
   useEffect(() => {
@@ -252,11 +253,42 @@ export default function AdminLayout({
               </button>
             </div>
 
-            {/* 모바일: 교사 아이콘만 */}
-            <div className="lg:hidden flex items-center gap-2">
-              <div className="w-10 h-10 bg-google-green rounded-xl flex items-center justify-center border-b-4 border-green-700">
+            {/* 모바일: 프로필 드롭다운 */}
+            <div className="lg:hidden relative">
+              <button
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="w-10 h-10 bg-google-green rounded-xl flex items-center justify-center border-b-4 border-green-700"
+              >
                 <User className="w-5 h-5 text-white" />
-              </div>
+              </button>
+
+              {/* 드롭다운 메뉴 */}
+              {isProfileDropdownOpen && (
+                <>
+                  {/* 오버레이 */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                  />
+                  {/* 메뉴 */}
+                  <div className="absolute right-0 top-12 z-50 bg-white rounded-xl shadow-lg border-2 border-gray-100 min-w-[160px] overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="font-bold text-gray-800">{adminName}</p>
+                      <p className="text-xs text-gray-500">교사</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        signOut();
+                      }}
+                      className="w-full px-4 py-3 flex items-center gap-2 text-google-red hover:bg-red-50 transition-colors font-bold"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      로그아웃
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </header>
