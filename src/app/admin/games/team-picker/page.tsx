@@ -33,11 +33,17 @@ interface TeamConfig {
   color: string;
 }
 
+interface ExistingTeam {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface TeamAssignment {
   [studentId: string]: string; // studentId -> teamId
 }
 
-type GamePhase = "setup" | "picking" | "results";
+type GamePhase = "setup" | "picking" | "results" | "existing";
 
 // 기본 팀 색상
 const DEFAULT_COLORS = [
@@ -61,6 +67,9 @@ export default function TeamPickerPage() {
   const [teamCount, setTeamCount] = useState(2);
   const [teams, setTeams] = useState<TeamConfig[]>([]);
 
+  // 기존 팀 데이터 (DB에서 불러온 것)
+  const [existingTeams, setExistingTeams] = useState<ExistingTeam[]>([]);
+
   // 뽑기 진행
   const [unassignedStudents, setUnassignedStudents] = useState<Student[]>([]);
   const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
@@ -75,27 +84,48 @@ export default function TeamPickerPage() {
 
   const rouletteRef = useRef<HTMLDivElement>(null);
 
-  // 학생 목록 가져오기
+  // 학생 및 팀 목록 가져오기
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchData = async () => {
       if (!churchId) {
         setIsLoading(false);
         return;
       }
 
-      const { data } = await supabase
+      // 학생 목록
+      const { data: studentsData } = await supabase
         .from("students")
         .select("id, name, team_id")
         .eq("church_id", churchId)
         .order("name");
 
-      if (data) {
-        setStudents(data as Student[]);
+      // 팀 목록
+      const { data: teamsData } = await supabase
+        .from("teams")
+        .select("id, name, color")
+        .eq("church_id", churchId)
+        .order("name");
+
+      if (studentsData) {
+        setStudents(studentsData as Student[]);
+
+        // 이미 팀이 배정된 학생이 있는지 확인
+        const hasAssignedStudents = studentsData.some((s: Student) => s.team_id !== null);
+
+        if (hasAssignedStudents && teamsData && teamsData.length > 0) {
+          setExistingTeams(teamsData as ExistingTeam[]);
+          setGamePhase("existing");
+        }
       }
+
+      if (teamsData) {
+        setExistingTeams(teamsData as ExistingTeam[]);
+      }
+
       setIsLoading(false);
     };
 
-    fetchStudents();
+    fetchData();
   }, [churchId]);
 
   // 팀 개수 변경 시 팀 설정 초기화
@@ -291,6 +321,40 @@ export default function TeamPickerPage() {
     setSaveComplete(false);
   };
 
+  // 기존 팀별 학생 가져오기
+  const getExistingTeamStudents = (teamId: string) => {
+    return students.filter((s) => s.team_id === teamId);
+  };
+
+  // 다시 뽑기 (기존 배정 초기화)
+  const handleResetAssignments = async () => {
+    if (!churchId) return;
+    if (!confirm("기존 팀 배정을 초기화하고 다시 뽑으시겠습니까?")) return;
+
+    // 모든 학생의 팀 배정 초기화
+    for (const student of students) {
+      if (student.team_id) {
+        await supabase
+          .from("students")
+          .update({ team_id: null } as never)
+          .eq("id", student.id);
+      }
+    }
+
+    // 학생 목록 다시 불러오기
+    const { data } = await supabase
+      .from("students")
+      .select("id, name, team_id")
+      .eq("church_id", churchId)
+      .order("name");
+
+    if (data) {
+      setStudents(data as Student[]);
+    }
+
+    setGamePhase("setup");
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -306,6 +370,84 @@ export default function TeamPickerPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // 기존 팀 배정 현황 화면
+  if (gamePhase === "existing") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
+            <Trophy className="w-7 h-7 text-google-yellow" />
+            팀 배정 현황
+          </h2>
+          <Button variant="ghost" onClick={handleResetAssignments} className="rounded-xl text-google-red hover:bg-google-red/10">
+            <RotateCcw className="w-4 h-4 mr-2" />
+            다시 뽑기
+          </Button>
+        </div>
+
+        {/* 팀별 현황 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {existingTeams.map((team) => {
+            const teamStudents = getExistingTeamStudents(team.id);
+            return (
+              <Card
+                key={team.id}
+                className="rounded-2xl shadow-lg overflow-hidden"
+              >
+                <div
+                  className="py-4 px-6 text-white"
+                  style={{ backgroundColor: team.color }}
+                >
+                  <h3 className="text-xl font-black">{team.name}</h3>
+                  <p className="text-white/80 font-bold">{teamStudents.length}명</p>
+                </div>
+                <CardContent className="py-4">
+                  <div className="space-y-2">
+                    {teamStudents.map((student) => (
+                      <div
+                        key={student.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+                      >
+                        <span className="font-bold text-gray-700">{student.name}</span>
+                      </div>
+                    ))}
+                    {teamStudents.length === 0 && (
+                      <p className="text-gray-400 text-center py-4">배정된 학생이 없습니다</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* 미배정 학생이 있는 경우 표시 */}
+        {students.filter(s => !s.team_id).length > 0 && (
+          <Card className="rounded-2xl shadow-md border-2 border-dashed border-gray-300">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-gray-600">
+                <Users className="w-5 h-5" />
+                미배정 학생 ({students.filter(s => !s.team_id).length}명)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {students.filter(s => !s.team_id).map((student) => (
+                  <span
+                    key={student.id}
+                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm font-bold"
+                  >
+                    {student.name}
+                  </span>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
