@@ -22,6 +22,16 @@ export default function LoginPage() {
     setError("");
 
     try {
+      // 슈퍼 관리자 로그인 체크
+      if (churchCode.toLowerCase() === "god" && loginCode.toLowerCase() === "jesus") {
+        localStorage.setItem("user", JSON.stringify({
+          role: "super_admin",
+          name: "슈퍼 관리자"
+        }));
+        window.location.href = "/super-admin/dashboard";
+        return;
+      }
+
       // 1. 교회 코드로 교회 찾기
       const { data: churchData, error: churchError } = await supabase
         .from("churches")
