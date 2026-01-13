@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { BookOpen, ChevronLeft, ChevronRight, Loader2, Save, Pencil, Trash2, Camera, Plus, X } from "lucide-react";
 
 interface QTTopic {
   id: string;
@@ -17,8 +18,17 @@ interface QTTopic {
 
 export default function QTTopicsPage() {
   const { churchId } = useAuth();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  // 로컬 시간 기준 날짜 (YYYY-MM-DD)
+  const getLocalDateString = (date: Date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [topic, setTopic] = useState<QTTopic | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -26,7 +36,6 @@ export default function QTTopicsPage() {
   const [existingUrls, setExistingUrls] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [recentTopics, setRecentTopics] = useState<QTTopic[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 선택한 날짜의 QT 주제 로드
@@ -35,6 +44,7 @@ export default function QTTopicsPage() {
       if (!churchId) return;
 
       setIsLoading(true);
+      setIsEditMode(false);
 
       const { data } = await supabase
         .from("qt_topics")
@@ -56,6 +66,7 @@ export default function QTTopicsPage() {
         setContent("");
         setExistingUrls([]);
         setPreviewUrls([]);
+        setIsEditMode(true); // 등록된 주제가 없으면 편집 모드
       }
 
       setSelectedImages([]);
@@ -64,26 +75,6 @@ export default function QTTopicsPage() {
 
     fetchTopic();
   }, [churchId, selectedDate]);
-
-  // 최근 QT 주제 목록 로드
-  useEffect(() => {
-    const fetchRecentTopics = async () => {
-      if (!churchId) return;
-
-      const { data } = await supabase
-        .from("qt_topics")
-        .select("*")
-        .eq("church_id", churchId)
-        .order("date", { ascending: false })
-        .limit(7);
-
-      if (data) {
-        setRecentTopics(data as QTTopic[]);
-      }
-    };
-
-    fetchRecentTopics();
-  }, [churchId, topic]);
 
   // 이미지 선택 (다중)
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,7 +129,7 @@ export default function QTTopicsPage() {
         const filePath = `qt-topics/${churchId}/${selectedDate}_${timestamp}_${i}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("qt-photos")
+          .from("qt-topics")
           .upload(filePath, file);
 
         if (uploadError) {
@@ -149,7 +140,7 @@ export default function QTTopicsPage() {
         }
 
         const { data: urlData } = supabase.storage
-          .from("qt-photos")
+          .from("qt-topics")
           .getPublicUrl(filePath);
 
         newImageUrls.push(urlData.publicUrl);
@@ -209,6 +200,7 @@ export default function QTTopicsPage() {
         setSelectedImages([]);
       }
 
+      setIsEditMode(false); // 저장 후 미리보기 모드로
       alert("저장되었습니다!");
     } catch (error) {
       console.error("Error:", error);
@@ -240,21 +232,24 @@ export default function QTTopicsPage() {
     setExistingUrls([]);
     setPreviewUrls([]);
     setSelectedImages([]);
+    setIsEditMode(true);
   };
 
   // 날짜 이동
   const changeDate = (days: number) => {
-    const date = new Date(selectedDate);
+    const [year, month, day] = selectedDate.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
     date.setDate(date.getDate() + days);
-    setSelectedDate(date.toISOString().split("T")[0]);
+    setSelectedDate(getLocalDateString(date));
   };
 
   // 오늘인지 확인
-  const isToday = selectedDate === new Date().toISOString().split("T")[0];
+  const isToday = selectedDate === getLocalDateString();
 
-  // 날짜 포맷
+  // 날짜 포맷 (로컬 시간 기준)
   const formatDateKorean = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
     const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
     return `${date.getMonth() + 1}월 ${date.getDate()}일 (${dayNames[date.getDay()]})`;
   };
@@ -265,251 +260,248 @@ export default function QTTopicsPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+          <BookOpen className="w-6 h-6 text-google-blue" />
+          QT 주제 등록
+        </h2>
+      </div>
+
       {/* 날짜 선택 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => changeDate(-1)}
-            className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-gray-600 transition-colors"
-          >
-            ‹
-          </button>
-          <div className="text-center">
-            <p className="text-2xl font-black text-gray-800">
-              {formatDateKorean(selectedDate)}
-            </p>
-            {isToday && (
-              <span className="text-xs bg-google-blue text-white px-2 py-0.5 rounded font-bold">
-                오늘
-              </span>
-            )}
-          </div>
-          <button
-            onClick={() => changeDate(1)}
-            className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center font-bold text-gray-600 transition-colors"
-          >
-            ›
-          </button>
-        </div>
-
-        <Button
-          variant="secondary"
-          onClick={() => setSelectedDate(new Date().toISOString().split("T")[0])}
+      <div className="flex items-center justify-center gap-3">
+        <button
+          onClick={() => changeDate(-1)}
+          className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
         >
-          오늘로 이동
-        </Button>
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="text-center min-w-[200px]">
+          <p className="text-xl font-black text-gray-800">
+            {formatDateKorean(selectedDate)}
+          </p>
+          {isToday && (
+            <span className="text-xs bg-google-blue text-white px-2 py-0.5 rounded font-bold">
+              오늘
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => changeDate(1)}
+          className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+        {!isToday && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setSelectedDate(getLocalDateString())}
+          >
+            오늘로
+          </Button>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* QT 주제 편집 */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <span>📖</span>
-                  {topic ? "QT 주제 수정" : "QT 주제 등록"}
-                </span>
-                {topic && (
-                  <Button variant="ghost" size="sm" onClick={handleDelete}>
-                    🗑️ 삭제
-                  </Button>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="text-center py-12">
-                  <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                    <span className="text-2xl">⏳</span>
-                  </div>
-                  <p className="text-gray-500 font-bold">로딩 중...</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* 제목 */}
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      제목 *
-                    </label>
-                    <Input
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="예: 창세기 1장 - 천지창조"
-                    />
-                  </div>
+      {/* 메인 컨텐츠 */}
+      <Card className="rounded-2xl shadow-md">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-google-blue" />
+              {!topic ? "QT 주제 등록" : isEditMode ? "QT 주제 수정" : "QT 주제"}
+            </span>
+            {topic && !isEditMode && (
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setIsEditMode(true)} className="flex items-center gap-1">
+                  <Pencil className="w-4 h-4" />
+                  수정
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleDelete} className="flex items-center gap-1">
+                  <Trash2 className="w-4 h-4" />
+                  삭제
+                </Button>
+              </div>
+            )}
+            {topic && isEditMode && (
+              <Button variant="ghost" size="sm" onClick={() => setIsEditMode(false)}>
+                취소
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+              </div>
+              <p className="text-gray-500 font-bold">로딩 중...</p>
+            </div>
+          ) : isEditMode ? (
+            /* 편집 모드 */
+            <div className="space-y-4">
+              {/* 제목 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  제목 *
+                </label>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="예: 창세기 1장 - 천지창조"
+                />
+              </div>
 
-                  {/* 내용 */}
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      내용 (선택)
-                    </label>
-                    <textarea
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      placeholder="오늘 QT 주제에 대한 설명이나 묵상 포인트를 작성해주세요"
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-google-blue/30 focus:border-google-blue transition-all min-h-[120px] resize-none"
-                    />
-                  </div>
+              {/* 내용 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  내용 (선택)
+                </label>
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="오늘 QT 주제에 대한 설명이나 묵상 포인트를 작성해주세요"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-google-blue/30 focus:border-google-blue transition-all min-h-[120px] resize-none"
+                />
+              </div>
 
-                  {/* 이미지 */}
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      이미지 (선택, 최대 10개) - {totalImageCount}/10
-                    </label>
+              {/* 이미지 */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  이미지 (선택, 최대 10개) - {totalImageCount}/10
+                </label>
 
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageSelect}
-                      className="hidden"
-                    />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
 
-                    {/* 이미지 그리드 */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-                      {/* 기존 이미지들 */}
-                      {existingUrls.map((url, index) => (
-                        <div key={`existing-${index}`} className="relative aspect-square">
-                          <img
-                            src={url}
-                            alt={`이미지 ${index + 1}`}
-                            className="w-full h-full object-cover rounded-xl border-2 border-gray-200"
-                          />
-                          <button
-                            onClick={() => removeExistingImage(index)}
-                            className="absolute top-1 right-1 w-6 h-6 bg-google-red text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg hover:scale-110 transition-transform"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-
-                      {/* 새로 선택한 이미지들 */}
-                      {previewUrls.map((url, index) => (
-                        <div key={`new-${index}`} className="relative aspect-square">
-                          <img
-                            src={url}
-                            alt={`새 이미지 ${index + 1}`}
-                            className="w-full h-full object-cover rounded-xl border-2 border-google-blue"
-                          />
-                          <div className="absolute top-1 left-1 px-2 py-0.5 bg-google-blue text-white text-xs rounded font-bold">
-                            NEW
-                          </div>
-                          <button
-                            onClick={() => removeNewImage(index)}
-                            className="absolute top-1 right-1 w-6 h-6 bg-google-red text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg hover:scale-110 transition-transform"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ))}
-
-                      {/* 추가 버튼 */}
-                      {canAddMore && (
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="aspect-square border-2 border-dashed border-gray-300 rounded-xl hover:border-google-blue hover:bg-blue-50 transition-all flex flex-col items-center justify-center"
-                        >
-                          <span className="text-2xl">➕</span>
-                          <p className="text-gray-500 font-bold text-xs mt-1">
-                            이미지 추가
-                          </p>
-                        </button>
-                      )}
-                    </div>
-
-                    {/* 빈 상태 */}
-                    {totalImageCount === 0 && (
+                {/* 이미지 그리드 */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                  {/* 기존 이미지들 */}
+                  {existingUrls.map((url, index) => (
+                    <div key={`existing-${index}`} className="relative aspect-square">
+                      <img
+                        src={url}
+                        alt={`이미지 ${index + 1}`}
+                        className="w-full h-full object-cover rounded-xl border-2 border-gray-200"
+                      />
                       <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl hover:border-google-blue hover:bg-blue-50 transition-all"
+                        onClick={() => removeExistingImage(index)}
+                        className="absolute top-1 right-1 w-6 h-6 bg-google-red text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
                       >
-                        <div className="text-center">
-                          <span className="text-3xl">📷</span>
-                          <p className="text-gray-500 font-bold mt-2">
-                            클릭하여 이미지 추가 (최대 10개)
-                          </p>
-                        </div>
+                        <X className="w-4 h-4" />
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  ))}
 
-                  {/* 저장 버튼 */}
-                  <Button
-                    onClick={handleSave}
-                    disabled={isSaving || !title.trim()}
-                    className="w-full"
-                    size="lg"
+                  {/* 새로 선택한 이미지들 */}
+                  {previewUrls.map((url, index) => (
+                    <div key={`new-${index}`} className="relative aspect-square">
+                      <img
+                        src={url}
+                        alt={`새 이미지 ${index + 1}`}
+                        className="w-full h-full object-cover rounded-xl border-2 border-google-blue"
+                      />
+                      <div className="absolute top-1 left-1 px-2 py-0.5 bg-google-blue text-white text-xs rounded font-bold">
+                        NEW
+                      </div>
+                      <button
+                        onClick={() => removeNewImage(index)}
+                        className="absolute top-1 right-1 w-6 h-6 bg-google-red text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* 추가 버튼 */}
+                  {canAddMore && totalImageCount > 0 && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="aspect-square border-2 border-dashed border-gray-300 rounded-xl hover:border-google-blue hover:bg-blue-50 transition-all flex flex-col items-center justify-center"
+                    >
+                      <Plus className="w-6 h-6 text-gray-400" />
+                      <p className="text-gray-500 font-bold text-xs mt-1">
+                        이미지 추가
+                      </p>
+                    </button>
+                  )}
+                </div>
+
+                {/* 빈 상태 */}
+                {totalImageCount === 0 && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl hover:border-google-blue hover:bg-blue-50 transition-all"
                   >
-                    {isSaving ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="animate-spin">⏳</span>
-                        저장 중...
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center gap-2">
-                        <span>💾</span>
-                        {topic ? "수정하기" : "등록하기"}
-                      </span>
-                    )}
-                  </Button>
+                    <div className="text-center">
+                      <Camera className="w-8 h-8 text-gray-400 mx-auto" />
+                      <p className="text-gray-500 font-bold mt-2">
+                        클릭하여 이미지 추가 (최대 10개)
+                      </p>
+                    </div>
+                  </button>
+                )}
+              </div>
+
+              {/* 저장 버튼 */}
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || !title.trim()}
+                className="w-full"
+                size="lg"
+              >
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    저장 중...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <Save className="w-5 h-5" />
+                    {topic ? "수정하기" : "등록하기"}
+                  </span>
+                )}
+              </Button>
+            </div>
+          ) : (
+            /* 미리보기 모드 */
+            <div className="space-y-4">
+              {/* 제목 */}
+              <div className="p-6 bg-google-blue/5 rounded-2xl shadow-sm">
+                <p className="text-2xl font-black text-google-blue">{title}</p>
+              </div>
+
+              {/* 내용 */}
+              {content && (
+                <div className="p-6 bg-gray-50 rounded-2xl">
+                  <p className="text-lg text-gray-700 whitespace-pre-wrap leading-relaxed">{content}</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* 최근 QT 주제 목록 */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span>📅</span> 최근 QT 주제
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recentTopics.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">
-                  등록된 QT 주제가 없습니다.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {recentTopics.map((t) => {
-                    const isSelected = t.date === selectedDate;
-                    const imageCount = t.image_urls?.length || 0;
-                    return (
-                      <li key={t.id}>
-                        <button
-                          onClick={() => setSelectedDate(t.date)}
-                          className={`w-full text-left p-3 rounded-xl transition-all ${
-                            isSelected
-                              ? "bg-google-blue text-white"
-                              : "bg-gray-50 hover:bg-gray-100"
-                          }`}
-                        >
-                          <p className={`text-xs font-bold ${isSelected ? "text-white/80" : "text-gray-500"}`}>
-                            {formatDateKorean(t.date)}
-                          </p>
-                          <p className={`font-bold truncate ${isSelected ? "text-white" : "text-gray-800"}`}>
-                            {t.title}
-                          </p>
-                          {imageCount > 0 && (
-                            <span className={`text-xs ${isSelected ? "text-white/70" : "text-gray-400"}`}>
-                              📷 이미지 {imageCount}개
-                            </span>
-                          )}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
+              {/* 이미지들 */}
+              {existingUrls.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {existingUrls.map((url, index) => (
+                    <div key={index} className="relative aspect-square">
+                      <img
+                        src={url}
+                        alt={`이미지 ${index + 1}`}
+                        className="w-full h-full object-cover rounded-2xl shadow-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -6,6 +6,21 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import {
+  Coins,
+  Cross,
+  ClipboardList,
+  CheckCircle,
+  Square,
+  BookOpen,
+  FileText,
+  Camera,
+  Calendar,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  Hand
+} from "lucide-react";
 
 interface QuestRecord {
   id: string;
@@ -57,9 +72,12 @@ export default function StudentDashboard() {
     return new Date(today.setDate(diff));
   };
 
-  // 날짜 포맷 (YYYY-MM-DD)
+  // 날짜 포맷 (YYYY-MM-DD) - 로컬 시간 기준
   const formatDate = (date: Date) => {
-    return date.toISOString().split("T")[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   // 이번 달 날짜들 구하기
@@ -155,10 +173,10 @@ export default function StudentDashboard() {
     );
   };
 
-  // 해당 날짜에 QT 기록이 있는지
-  const hasQTRecord = (date: Date) => {
+  // 해당 날짜에 특정 타입 기록이 있는지
+  const hasRecord = (date: Date, type: string) => {
     return monthRecords.some(
-      (r) => r.type === "qt" && r.date === formatDate(date) && r.approved
+      (r) => r.type === type && r.date === formatDate(date) && r.approved
     );
   };
 
@@ -178,17 +196,16 @@ export default function StudentDashboard() {
       {/* 인사 메시지 + 팀 뱃지 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-black text-gray-800">
-            {studentName} 친구, 안녕! 👋
+          <h1 className="text-2xl font-black text-gray-800 flex items-center gap-2">
+            {studentName} 친구, 안녕! <Hand className="w-6 h-6 text-google-yellow" />
           </h1>
           <p className="text-gray-500 text-sm mt-1">오늘도 하나님과 함께!</p>
         </div>
         {team && (
           <div
-            className="px-4 py-2 rounded-lg font-black text-white border-b-4"
+            className="px-4 py-2 rounded-2xl font-black text-white shadow-md"
             style={{
               backgroundColor: team.color || "#4285F4",
-              borderColor: `${team.color || "#4285F4"}dd`,
             }}
           >
             {team.name}
@@ -197,36 +214,74 @@ export default function StudentDashboard() {
       </div>
 
       {/* 달란트 카드 */}
-      <Card className="bg-google-yellow border-b-4 border-yellow-500">
+      <Card className="bg-gradient-to-br from-google-yellow to-yellow-400 rounded-2xl shadow-lg">
         <CardContent className="py-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-yellow-800 font-bold text-sm">내 달란트</p>
               <p className="text-4xl font-black text-gray-800 mt-1">{talent}</p>
             </div>
-            <div className="w-20 h-20 bg-white/30 rounded-2xl flex items-center justify-center">
-              <span className="text-5xl">🪙</span>
+            <div className="w-20 h-20 bg-white/30 rounded-2xl flex items-center justify-center shadow-inner">
+              <Coins className="w-12 h-12 text-yellow-700" />
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* 이번 주 암송 말씀 */}
+      {weeklyVerse && (
+        <div>
+          <h2 className="text-lg font-black text-gray-800 mb-3 flex items-center gap-2">
+            <Cross className="w-5 h-5 text-google-blue" /> 이번 주 암송 말씀
+          </h2>
+          <Card className="rounded-2xl shadow-md bg-google-yellow/5">
+            <CardContent className="py-4">
+              {/* 한국어 */}
+              <div className="p-4 bg-white rounded-2xl mb-2 shadow-sm">
+                <p className="font-black text-google-yellow text-base mb-2">{weeklyVerse.reference_ko}</p>
+                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{weeklyVerse.verse_ko}</p>
+              </div>
+
+              {/* 영어 */}
+              {weeklyVerse.reference_en && weeklyVerse.verse_en && (
+                <div className="p-4 bg-white rounded-2xl mb-2 shadow-sm">
+                  <p className="font-black text-google-blue text-base mb-2">{weeklyVerse.reference_en}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{weeklyVerse.verse_en}</p>
+                </div>
+              )}
+
+              {/* 프랑스어 */}
+              {weeklyVerse.reference_fr && weeklyVerse.verse_fr && (
+                <div className="p-4 bg-white rounded-2xl shadow-sm">
+                  <p className="font-black text-google-red text-base mb-2">{weeklyVerse.reference_fr}</p>
+                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{weeklyVerse.verse_fr}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* 이번 주 퀘스트 */}
       <div>
         <h2 className="text-lg font-black text-gray-800 mb-3 flex items-center gap-2">
-          <span>📋</span> 이번 주 퀘스트
+          <ClipboardList className="w-5 h-5 text-google-green" /> 이번 주 퀘스트
         </h2>
 
         <div className="space-y-3">
           {/* 출석 */}
-          <Card className={`border-2 ${isQuestCompleted("attendance", thisSunday) ? "border-google-green bg-green-50" : "border-gray-200"}`}>
+          <Card className={`rounded-2xl shadow-md transition-all ${isQuestCompleted("attendance", thisSunday) ? "bg-google-green/5" : "bg-white"}`}>
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    isQuestCompleted("attendance", thisSunday) ? "bg-google-green" : "bg-gray-200"
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                    isQuestCompleted("attendance", thisSunday) ? "bg-google-green" : "bg-gray-100"
                   }`}>
-                    <span className="text-2xl">{isQuestCompleted("attendance", thisSunday) ? "✅" : "⬜"}</span>
+                    {isQuestCompleted("attendance", thisSunday) ? (
+                      <CheckCircle className="w-6 h-6 text-white" />
+                    ) : (
+                      <Square className="w-6 h-6 text-gray-400" />
+                    )}
                   </div>
                   <div>
                     <p className="font-black text-gray-800">출석</p>
@@ -234,69 +289,30 @@ export default function StudentDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-black ${isQuestCompleted("attendance", thisSunday) ? "text-google-green" : "text-gray-400"}`}>
-                    +{getTalentAmount("attendance")} 🪙
+                  <p className={`font-black flex items-center justify-end gap-1 ${isQuestCompleted("attendance", thisSunday) ? "text-google-green" : "text-gray-400"}`}>
+                    +{getTalentAmount("attendance")} <Coins className="w-4 h-4" />
                   </p>
                   {isQuestCompleted("attendance", thisSunday) && (
-                    <p className="text-xs text-google-green font-bold">완료!</p>
+                    <span className="text-xs text-white font-bold bg-google-green px-2 py-0.5 rounded-full">완료!</span>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* 이번 주 암송 말씀 */}
-          {weeklyVerse && (
-            <Card className="border-2 border-google-green bg-green-50">
-              <CardContent className="py-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-xl">✝️</span>
-                  <p className="font-black text-gray-800">이번 주 암송 말씀</p>
-                </div>
-
-                {/* 한국어 */}
-                <div className="p-3 bg-white rounded-xl mb-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm">🇰🇷</span>
-                    <p className="font-black text-google-green text-sm">{weeklyVerse.reference_ko}</p>
-                  </div>
-                  <p className="text-gray-700 text-sm whitespace-pre-wrap">{weeklyVerse.verse_ko}</p>
-                </div>
-
-                {/* 영어 */}
-                {weeklyVerse.reference_en && weeklyVerse.verse_en && (
-                  <div className="p-3 bg-white rounded-xl mb-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm">🇺🇸</span>
-                      <p className="font-black text-google-blue text-sm">{weeklyVerse.reference_en}</p>
-                    </div>
-                    <p className="text-gray-700 text-sm whitespace-pre-wrap">{weeklyVerse.verse_en}</p>
-                  </div>
-                )}
-
-                {/* 프랑스어 */}
-                {weeklyVerse.reference_fr && weeklyVerse.verse_fr && (
-                  <div className="p-3 bg-white rounded-xl">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm">🇫🇷</span>
-                      <p className="font-black text-google-red text-sm">{weeklyVerse.reference_fr}</p>
-                    </div>
-                    <p className="text-gray-700 text-sm whitespace-pre-wrap">{weeklyVerse.verse_fr}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
           {/* 암송 */}
-          <Card className={`border-2 ${isQuestCompleted("recitation", thisSunday) ? "border-google-blue bg-blue-50" : "border-gray-200"}`}>
+          <Card className={`rounded-2xl shadow-md transition-all ${isQuestCompleted("recitation", thisSunday) ? "bg-google-yellow/5" : "bg-white"}`}>
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    isQuestCompleted("recitation", thisSunday) ? "bg-google-blue" : "bg-gray-200"
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                    isQuestCompleted("recitation", thisSunday) ? "bg-google-yellow" : "bg-gray-100"
                   }`}>
-                    <span className="text-2xl">{isQuestCompleted("recitation", thisSunday) ? "✅" : "📖"}</span>
+                    {isQuestCompleted("recitation", thisSunday) ? (
+                      <CheckCircle className="w-6 h-6 text-white" />
+                    ) : (
+                      <BookOpen className="w-6 h-6 text-gray-400" />
+                    )}
                   </div>
                   <div>
                     <p className="font-black text-gray-800">암송</p>
@@ -304,78 +320,112 @@ export default function StudentDashboard() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-black ${isQuestCompleted("recitation", thisSunday) ? "text-google-blue" : "text-gray-400"}`}>
-                    +{getTalentAmount("recitation")} 🪙
+                  <p className={`font-black flex items-center justify-end gap-1 ${isQuestCompleted("recitation", thisSunday) ? "text-google-yellow" : "text-gray-400"}`}>
+                    +{getTalentAmount("recitation")} <Coins className="w-4 h-4" />
                   </p>
                   {isQuestCompleted("recitation", thisSunday) && (
-                    <p className="text-xs text-google-blue font-bold">완료!</p>
+                    <span className="text-xs text-white font-bold bg-google-yellow px-2 py-0.5 rounded-full">완료!</span>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* QT */}
-          <Card className={`border-2 ${isQuestCompleted("qt", today) ? "border-google-red bg-red-50" : "border-gray-200"}`}>
+          {/* QT - 월~토 6칸 */}
+          <Card className="rounded-2xl shadow-md bg-white">
             <CardContent className="py-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    isQuestCompleted("qt", today) ? "bg-google-red" : "bg-gray-200"
-                  }`}>
-                    <span className="text-2xl">{isQuestCompleted("qt", today) ? "✅" : "📝"}</span>
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-google-red">
+                    <FileText className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="font-black text-gray-800">오늘의 QT</p>
-                    <p className="text-xs text-gray-500">매일 말씀 묵상</p>
+                    <p className="font-black text-gray-800">매일 QT</p>
+                    <p className="text-xs text-gray-500">월-토 매일 말씀 묵상</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  {isQuestCompleted("qt", today) ? (
-                    <>
-                      <p className="font-black text-google-red">+{getTalentAmount("qt")} 🪙</p>
-                      <p className="text-xs text-google-red font-bold">완료!</p>
-                    </>
-                  ) : (
-                    <Link href="/student/qt-upload">
-                      <Button size="sm" variant="red">
-                        📷 인증하기
-                      </Button>
-                    </Link>
-                  )}
-                </div>
+                <Link href="/student/qt-upload">
+                  <Button size="sm" variant="red" className="rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-1">
+                    <Camera className="w-4 h-4" /> 인증
+                  </Button>
+                </Link>
+              </div>
+              {/* 월-토 6칸 */}
+              <div className="grid grid-cols-6 gap-2">
+                {(() => {
+                  const sunday = getThisSunday();
+                  const days = ["월", "화", "수", "목", "금", "토"];
+                  return days.map((day, index) => {
+                    const date = new Date(sunday);
+                    date.setDate(sunday.getDate() + index + 1); // 월요일부터
+                    const dateStr = formatDate(date);
+                    const isCompleted = weeklyRecords.some(
+                      (r) => r.type === "qt" && r.date === dateStr && r.approved
+                    );
+                    const isCurrentDay = dateStr === today;
+                    return (
+                      <div
+                        key={day}
+                        className={`flex flex-col items-center p-2 rounded-2xl transition-all ${
+                          isCompleted
+                            ? "bg-google-red/10 shadow-sm"
+                            : isCurrentDay
+                            ? "bg-google-blue/10 shadow-sm"
+                            : "bg-gray-50"
+                        }`}
+                      >
+                        <span className={`text-xs font-bold ${isCurrentDay ? "text-google-blue" : "text-gray-500"}`}>
+                          {day}
+                        </span>
+                        <span className="mt-1">
+                          {isCompleted ? (
+                            <CheckCircle className="w-5 h-5 text-google-red" />
+                          ) : (
+                            <Square className="w-5 h-5 text-gray-300" />
+                          )}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              <div className="mt-3 text-right">
+                <p className="text-sm text-gray-500 flex items-center justify-end gap-1">
+                  완료: <span className="font-black text-google-red">{weeklyRecords.filter((r) => r.type === "qt" && r.approved).length}</span>/6
+                  <span className="ml-2 flex items-center gap-0.5">+{getTalentAmount("qt")} <Coins className="w-3 h-3" />/일</span>
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* QT 달력 */}
+      {/* 달력 */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-black text-gray-800 flex items-center gap-2">
-            <span>📅</span> QT 달력
+            <Calendar className="w-5 h-5 text-google-blue" /> 달력
           </h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}
-              className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-200"
+              className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-200 transition-colors"
             >
-              ‹
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <span className="font-black text-gray-800">
               {selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월
             </span>
             <button
               onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))}
-              className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-200"
+              className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-200 transition-colors"
             >
-              ›
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <Card className="border-2 border-gray-200">
+        <Card className="rounded-2xl shadow-md bg-white">
           <CardContent className="py-4">
             {/* 요일 헤더 */}
             <div className="grid grid-cols-7 gap-1 mb-2">
@@ -399,25 +449,35 @@ export default function StudentDashboard() {
                 }
 
                 const isToday = formatDate(date) === today;
-                const hasQT = hasQTRecord(date);
                 const isSundayDate = date.getDay() === 0;
+                const hasAttendance = hasRecord(date, "attendance");
+                const hasRecitation = hasRecord(date, "recitation");
+                const hasQT = hasRecord(date, "qt");
 
                 return (
                   <div
                     key={formatDate(date)}
-                    className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm relative ${
+                    className={`aspect-square rounded-xl flex flex-col items-center justify-center text-sm relative transition-all ${
                       isToday
-                        ? "bg-google-blue text-white font-black"
+                        ? "bg-google-blue text-white font-black shadow-md"
                         : isSundayDate
                         ? "text-google-red font-bold"
-                        : "text-gray-700"
+                        : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
                     <span>{date.getDate()}</span>
-                    {hasQT && (
-                      <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
-                        isToday ? "bg-white" : "bg-google-green"
-                      }`} />
+                    {(hasAttendance || hasRecitation || hasQT) && (
+                      <div className="flex items-center gap-0.5 mt-0.5">
+                        {hasAttendance && (
+                          <div className={`w-1.5 h-1.5 rounded-full ${isToday ? "bg-white" : "bg-google-green"}`} />
+                        )}
+                        {hasRecitation && (
+                          <div className={`w-1.5 h-1.5 rounded-full ${isToday ? "bg-white" : "bg-google-yellow"}`} />
+                        )}
+                        {hasQT && (
+                          <div className={`w-1.5 h-1.5 rounded-full ${isToday ? "bg-white" : "bg-google-red"}`} />
+                        )}
+                      </div>
                     )}
                   </div>
                 );
@@ -425,14 +485,18 @@ export default function StudentDashboard() {
             </div>
 
             {/* 범례 */}
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <div className="w-2 h-2 rounded-full bg-google-green" />
-                <span>QT 완료</span>
+            <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <div className="w-2.5 h-2.5 rounded-full bg-google-green" />
+                <span>출석</span>
               </div>
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <div className="w-4 h-4 rounded bg-google-blue" />
-                <span>오늘</span>
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <div className="w-2.5 h-2.5 rounded-full bg-google-yellow" />
+                <span>암송</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <div className="w-2.5 h-2.5 rounded-full bg-google-red" />
+                <span>QT</span>
               </div>
             </div>
           </CardContent>
@@ -440,27 +504,43 @@ export default function StudentDashboard() {
       </div>
 
       {/* 이번 주 요약 */}
-      <Card className="bg-gray-50 border-2 border-gray-200">
+      <Card className="rounded-2xl shadow-md bg-gray-50">
         <CardContent className="py-4">
-          <h3 className="font-black text-gray-800 mb-3">이번 주 요약</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white rounded-xl p-3 text-center border-2 border-gray-100">
-              <p className="text-2xl font-black text-google-green">
-                {weeklyRecords.filter((r) => r.approved).length}
+          <h3 className="font-black text-gray-800 mb-3 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-google-red" /> 이번 주 요약
+          </h3>
+          <div className="grid grid-cols-4 gap-3">
+            <div className={`bg-white rounded-2xl p-3 text-center shadow-sm transition-all ${isQuestCompleted("attendance", thisSunday) ? "ring-2 ring-google-green" : ""}`}>
+              <p className="text-2xl font-black text-google-green flex justify-center">
+                {isQuestCompleted("attendance", thisSunday) ? (
+                  <CheckCircle className="w-7 h-7" />
+                ) : (
+                  <Square className="w-7 h-7 text-gray-300" />
+                )}
               </p>
-              <p className="text-xs text-gray-500 font-bold">완료 퀘스트</p>
+              <p className="text-xs text-gray-500 font-bold mt-1">출석</p>
             </div>
-            <div className="bg-white rounded-xl p-3 text-center border-2 border-gray-100">
+            <div className={`bg-white rounded-2xl p-3 text-center shadow-sm transition-all ${isQuestCompleted("recitation", thisSunday) ? "ring-2 ring-google-yellow" : ""}`}>
+              <p className="text-2xl font-black text-google-yellow flex justify-center">
+                {isQuestCompleted("recitation", thisSunday) ? (
+                  <CheckCircle className="w-7 h-7" />
+                ) : (
+                  <Square className="w-7 h-7 text-gray-300" />
+                )}
+              </p>
+              <p className="text-xs text-gray-500 font-bold mt-1">암송</p>
+            </div>
+            <div className="bg-white rounded-2xl p-3 text-center shadow-sm">
+              <p className="text-2xl font-black text-google-red">
+                {weeklyRecords.filter((r) => r.type === "qt" && r.approved).length}/6
+              </p>
+              <p className="text-xs text-gray-500 font-bold">QT</p>
+            </div>
+            <div className="bg-white rounded-2xl p-3 text-center shadow-sm">
               <p className="text-2xl font-black text-google-blue">
-                {weeklyRecords.filter((r) => r.type === "qt" && r.approved).length}
-              </p>
-              <p className="text-xs text-gray-500 font-bold">QT 횟수</p>
-            </div>
-            <div className="bg-white rounded-xl p-3 text-center border-2 border-gray-100">
-              <p className="text-2xl font-black text-google-yellow">
                 +{weeklyRecords.filter((r) => r.approved).reduce((sum, r) => sum + r.talent_earned, 0)}
               </p>
-              <p className="text-xs text-gray-500 font-bold">획득 달란트</p>
+              <p className="text-xs text-gray-500 font-bold">달란트</p>
             </div>
           </div>
         </CardContent>

@@ -7,6 +7,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import type { Student, Team } from "@/types/database";
+import { Users, UserPlus, Trash2, Loader2, Coins, Pencil, Check, X } from "lucide-react";
 
 interface StudentWithTeam extends Student {
   team: Team | null;
@@ -20,8 +21,10 @@ export default function StudentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newStudentName, setNewStudentName] = useState("");
-  const [newStudentTeam, setNewStudentTeam] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("");
+  const [isUpdatingTeam, setIsUpdatingTeam] = useState(false);
 
   // 학생 목록 불러오기
   const fetchStudents = async () => {
@@ -88,7 +91,7 @@ export default function StudentsPage() {
         church_id: churchId,
         name: newStudentName.trim(),
         login_code: nextCode,
-        team_id: newStudentTeam || null,
+        team_id: null,
         talent: 0,
       }] as never);
 
@@ -100,7 +103,6 @@ export default function StudentsPage() {
       await fetchStudents();
       setShowAddModal(false);
       setNewStudentName("");
-      setNewStudentTeam("");
     } catch (err) {
       alert(err instanceof Error ? err.message : "오류가 발생했습니다.");
     } finally {
@@ -125,6 +127,38 @@ export default function StudentsPage() {
     await fetchStudents();
   };
 
+  // 팀 수정 시작
+  const startEditingTeam = (student: StudentWithTeam) => {
+    setEditingTeamId(student.id);
+    setSelectedTeamId(student.team?.id || "");
+  };
+
+  // 팀 수정 취소
+  const cancelEditingTeam = () => {
+    setEditingTeamId(null);
+    setSelectedTeamId("");
+  };
+
+  // 팀 수정 저장
+  const handleUpdateTeam = async (studentId: string) => {
+    setIsUpdatingTeam(true);
+
+    const { error } = await supabase
+      .from("students")
+      .update({ team_id: selectedTeamId || null } as never)
+      .eq("id", studentId);
+
+    if (error) {
+      alert("팀 수정 중 오류가 발생했습니다.");
+    } else {
+      await fetchStudents();
+    }
+
+    setEditingTeamId(null);
+    setSelectedTeamId("");
+    setIsUpdatingTeam(false);
+  };
+
   const filteredStudents = students.filter((student) =>
     student.name.includes(searchTerm) || student.login_code.includes(searchTerm)
   );
@@ -132,11 +166,17 @@ export default function StudentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">학생 관리</h2>
-        <Button onClick={() => setShowAddModal(true)}>학생 추가</Button>
+        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+          <Users className="w-6 h-6 text-gray-600" />
+          학생 관리
+        </h2>
+        <Button onClick={() => setShowAddModal(true)} className="rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2">
+          <UserPlus className="w-4 h-4" />
+          학생 추가
+        </Button>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl shadow-md">
         <CardHeader>
           <div className="flex gap-4">
             <Input
@@ -158,33 +198,79 @@ export default function StudentsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">코드</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">이름</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">팀</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">달란트</th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-600">관리</th>
+                  <th className="text-left py-3 px-4 font-bold text-gray-600">코드</th>
+                  <th className="text-left py-3 px-4 font-bold text-gray-600">이름</th>
+                  <th className="text-left py-3 px-4 font-bold text-gray-600">팀</th>
+                  <th className="text-left py-3 px-4 font-bold text-gray-600">달란트</th>
+                  <th className="text-right py-3 px-4 font-bold text-gray-600">관리</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.map((student) => (
-                  <tr key={student.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                  <tr key={student.id} className="border-b last:border-b-0 hover:bg-gray-50 transition-colors">
                     <td className="py-3 px-4">
                       <span className="font-mono font-bold text-google-blue">{student.login_code}</span>
                     </td>
                     <td className="py-3 px-4 font-medium">{student.name}</td>
                     <td className="py-3 px-4">
-                      {student.team ? (
-                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-google-blue rounded-full">
-                          {student.team.name}
-                        </span>
+                      {editingTeamId === student.id ? (
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={selectedTeamId}
+                            onChange={(e) => setSelectedTeamId(e.target.value)}
+                            className="px-3 py-1.5 text-sm border-2 border-google-blue rounded-lg focus:outline-none"
+                            disabled={isUpdatingTeam}
+                          >
+                            <option value="">팀 없음</option>
+                            {teams.map((team) => (
+                              <option key={team.id} value={team.id}>
+                                {team.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => handleUpdateTeam(student.id)}
+                            disabled={isUpdatingTeam}
+                            className="p-1.5 bg-google-green text-white rounded-lg hover:bg-green-600 transition-colors"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={cancelEditingTeam}
+                            disabled={isUpdatingTeam}
+                            className="p-1.5 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <div className="flex items-center gap-2">
+                          {student.team ? (
+                            <span
+                              className="px-3 py-1 text-xs font-bold text-white rounded-full"
+                              style={{ backgroundColor: student.team.color || "#4285F4" }}
+                            >
+                              {student.team.name}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                          <button
+                            onClick={() => startEditingTeam(student)}
+                            className="p-1 text-gray-400 hover:text-google-blue hover:bg-google-blue/10 rounded-lg transition-colors"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                        </div>
                       )}
                     </td>
-                    <td className="py-3 px-4 font-medium text-google-blue">{student.talent}</td>
+                    <td className="py-3 px-4 font-bold text-google-yellow flex items-center gap-1">
+                                      {student.talent}
+                                      <Coins className="w-4 h-4" />
+                                    </td>
                     <td className="py-3 px-4 text-right">
-                      <Button variant="ghost" size="sm" className="text-google-red" onClick={() => handleDeleteStudent(student)}>
-                        삭제
+                      <Button variant="ghost" size="sm" className="text-google-red hover:bg-google-red/10 rounded-xl transition-colors" onClick={() => handleDeleteStudent(student)}>
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </td>
                   </tr>
@@ -198,8 +284,11 @@ export default function StudentsPage() {
       {/* 학생 추가 모달 */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-xl">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">학생 추가</h3>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-google-blue" />
+              학생 추가
+            </h3>
 
             <div className="space-y-4">
               <div>
@@ -213,25 +302,7 @@ export default function StudentsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  팀 (선택)
-                </label>
-                <select
-                  value={newStudentTeam}
-                  onChange={(e) => setNewStudentTeam(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-google-blue focus:outline-none"
-                >
-                  <option value="">팀 없음</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="bg-blue-50 rounded-lg p-3">
+              <div className="bg-google-blue/10 rounded-2xl p-4">
                 <p className="text-sm text-gray-600">
                   학생 코드: <span className="font-mono font-bold text-google-blue">{getNextStudentCode()}</span>
                 </p>
@@ -244,21 +315,27 @@ export default function StudentsPage() {
             <div className="flex gap-3 mt-6">
               <Button
                 variant="secondary"
-                className="flex-1"
+                className="flex-1 rounded-xl"
                 onClick={() => {
                   setShowAddModal(false);
                   setNewStudentName("");
-                  setNewStudentTeam("");
                 }}
               >
                 취소
               </Button>
               <Button
-                className="flex-1"
+                className="flex-1 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                 onClick={handleAddStudent}
                 disabled={!newStudentName.trim() || isAdding}
               >
-                {isAdding ? "추가 중..." : "추가"}
+                {isAdding ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    추가 중...
+                  </>
+                ) : (
+                  "추가"
+                )}
               </Button>
             </div>
           </div>

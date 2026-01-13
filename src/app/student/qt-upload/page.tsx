@@ -5,6 +5,18 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import {
+  Camera,
+  PartyPopper,
+  Clock,
+  CheckCircle,
+  BookOpen,
+  Upload,
+  ImageIcon,
+  Lightbulb,
+  X,
+  Loader2
+} from "lucide-react";
 
 interface TodayRecord {
   id: string;
@@ -32,7 +44,16 @@ export default function QTUploadPage() {
   const [viewerImage, setViewerImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const today = new Date().toISOString().split("T")[0];
+  // 로컬 시간 기준 오늘 날짜 (YYYY-MM-DD)
+  const getLocalDateString = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getLocalDateString();
 
   // 오늘 QT 기록 확인 및 달란트 설정 로드
   useEffect(() => {
@@ -124,7 +145,7 @@ export default function QTUploadPage() {
       const filePath = `${user.id}/${today}_${timestamp}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("qt-photos")
+        .from("qt-submissions")
         .upload(filePath, selectedImage);
 
       if (uploadError) {
@@ -136,7 +157,7 @@ export default function QTUploadPage() {
 
       // 2. 이미지 URL 가져오기
       const { data: urlData } = supabase.storage
-        .from("qt-photos")
+        .from("qt-submissions")
         .getPublicUrl(filePath);
 
       const photoUrl = urlData.publicUrl;
@@ -188,14 +209,14 @@ export default function QTUploadPage() {
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-black text-gray-800 flex items-center gap-2">
-          <span>📷</span> QT 인증
+          <Camera className="w-6 h-6 text-google-red" /> QT 인증
         </h2>
 
         <Card className="border-2 border-google-green bg-green-50">
           <CardContent className="py-8">
             <div className="text-center">
               <div className="w-24 h-24 mx-auto bg-google-green rounded-full flex items-center justify-center mb-4 animate-bounce">
-                <span className="text-5xl">🎉</span>
+                <PartyPopper className="w-12 h-12 text-white" />
               </div>
               <h3 className="text-2xl font-black text-gray-800 mb-2">
                 승인 완료!
@@ -228,14 +249,14 @@ export default function QTUploadPage() {
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-black text-gray-800 flex items-center gap-2">
-          <span>📷</span> QT 인증
+          <Camera className="w-6 h-6 text-google-red" /> QT 인증
         </h2>
 
         <Card className="border-2 border-google-blue bg-blue-50">
           <CardContent className="py-8">
             <div className="text-center">
               <div className="w-24 h-24 mx-auto bg-google-blue rounded-full flex items-center justify-center mb-4">
-                <span className="text-5xl animate-pulse">⏳</span>
+                <Clock className="w-12 h-12 text-white animate-pulse" />
               </div>
               <h3 className="text-2xl font-black text-gray-800 mb-2">
                 제출 완료!
@@ -268,7 +289,7 @@ export default function QTUploadPage() {
     return (
       <div className="space-y-4">
         <h2 className="text-xl font-black text-gray-800 flex items-center gap-2">
-          <span>📷</span> QT 인증
+          <Camera className="w-6 h-6 text-google-red" /> QT 인증
         </h2>
 
         <Card className="border-2 border-google-green bg-green-50">
@@ -277,7 +298,7 @@ export default function QTUploadPage() {
               <div className="relative w-32 h-32 mx-auto mb-6">
                 <div className="absolute inset-0 bg-google-green rounded-full animate-ping opacity-25" />
                 <div className="relative w-32 h-32 bg-google-green rounded-full flex items-center justify-center">
-                  <span className="text-6xl">✅</span>
+                  <CheckCircle className="w-16 h-16 text-white" />
                 </div>
               </div>
               <h3 className="text-2xl font-black text-gray-800 mb-2">
@@ -297,7 +318,7 @@ export default function QTUploadPage() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-black text-gray-800 flex items-center gap-2">
-        <span>📷</span> QT 인증
+        <Camera className="w-6 h-6 text-google-red" /> QT 인증
       </h2>
       <p className="text-gray-500 text-sm">오늘 QT한 사진을 찍어 올려주세요!</p>
 
@@ -307,7 +328,7 @@ export default function QTUploadPage() {
           <CardContent className="py-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 bg-google-blue rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="text-xl">📖</span>
+                <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-google-blue font-bold mb-1">오늘의 QT 주제</p>
@@ -361,7 +382,7 @@ export default function QTUploadPage() {
                 onClick={removeImage}
                 className="absolute top-2 right-2 w-10 h-10 bg-google-red text-white rounded-full flex items-center justify-center font-bold shadow-lg hover:scale-110 transition-transform"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -373,12 +394,12 @@ export default function QTUploadPage() {
             >
               {isUploading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin">⏳</span>
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   업로드 중...
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
-                  <span>📤</span>
+                  <Upload className="w-5 h-5" />
                   QT 인증하기
                 </span>
               )}
@@ -390,7 +411,7 @@ export default function QTUploadPage() {
           <CardContent className="py-8">
             <div className="text-center mb-6">
               <div className="w-20 h-20 mx-auto bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-                <span className="text-4xl">📷</span>
+                <Camera className="w-10 h-10 text-gray-400" />
               </div>
               <p className="text-gray-500 font-bold">
                 QT 사진을 올려주세요
@@ -408,7 +429,7 @@ export default function QTUploadPage() {
                 size="lg"
               >
                 <span className="flex items-center justify-center gap-2">
-                  <span>📸</span>
+                  <Camera className="w-5 h-5" />
                   카메라로 찍기
                 </span>
               </Button>
@@ -420,7 +441,7 @@ export default function QTUploadPage() {
                 size="lg"
               >
                 <span className="flex items-center justify-center gap-2">
-                  <span>🖼️</span>
+                  <ImageIcon className="w-5 h-5" />
                   갤러리에서 선택
                 </span>
               </Button>
@@ -433,7 +454,7 @@ export default function QTUploadPage() {
       <Card className="bg-google-yellow/20 border-2 border-google-yellow">
         <CardContent className="py-4">
           <div className="flex items-start gap-3">
-            <span className="text-2xl">💡</span>
+            <Lightbulb className="w-6 h-6 text-google-yellow flex-shrink-0" />
             <div>
               <p className="font-bold text-gray-800 text-sm">QT 인증 팁!</p>
               <ul className="text-gray-600 text-xs mt-1 space-y-1">
@@ -456,7 +477,7 @@ export default function QTUploadPage() {
             onClick={() => setViewerImage(null)}
             className="absolute top-4 right-4 w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white text-2xl font-bold transition-colors"
           >
-            ✕
+            <X className="w-6 h-6" />
           </button>
           <img
             src={viewerImage}

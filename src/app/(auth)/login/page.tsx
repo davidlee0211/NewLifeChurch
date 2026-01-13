@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -9,7 +8,6 @@ import { supabase } from "@/lib/supabase";
 import type { Church, Student, Admin } from "@/types/database";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [churchCode, setChurchCode] = useState("");
   const [loginCode, setLoginCode] = useState("");
@@ -39,8 +37,25 @@ export default function LoginPage() {
         return;
       }
 
+      // 먼저 관리자 테이블에서 확인 (관리자 우선)
+      const { data: adminData } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("church_id", church.id)
+        .eq("login_id", loginCode.toLowerCase())
+        .single();
+
+      const admin = adminData as Admin | null;
+
+      if (admin) {
+        localStorage.setItem("user", JSON.stringify({ ...admin, role: "admin", church }));
+        // 확실한 페이지 이동
+        window.location.href = "/admin/dashboard";
+        return;
+      }
+
+      // 관리자가 아니면 학생 테이블에서 확인
       if (isStudentCode(loginCode)) {
-        // 2. 학생 로그인 시도 (숫자 코드: 001~999)
         const { data: studentData } = await supabase
           .from("students")
           .select("*")
@@ -52,28 +67,13 @@ export default function LoginPage() {
 
         if (student) {
           localStorage.setItem("user", JSON.stringify({ ...student, role: "student", church }));
-          router.push("/student/dashboard");
+          // 확실한 페이지 이동
+          window.location.href = "/student/dashboard";
           return;
         }
 
         setError("존재하지 않는 학생 코드입니다.");
       } else {
-        // 3. 관리자 로그인 시도 (문자 아이디)
-        const { data: adminData } = await supabase
-          .from("admins")
-          .select("*")
-          .eq("church_id", church.id)
-          .eq("login_id", loginCode.toLowerCase())
-          .single();
-
-        const admin = adminData as Admin | null;
-
-        if (admin) {
-          localStorage.setItem("user", JSON.stringify({ ...admin, role: "admin", church }));
-          router.push("/admin/dashboard");
-          return;
-        }
-
         setError("존재하지 않는 교사 아이디입니다.");
       }
     } catch {

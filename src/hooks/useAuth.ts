@@ -21,13 +21,38 @@ export type AuthUser = StudentUser | AdminUser | null;
 
 const AUTH_STORAGE_KEY = "user";
 
+// 초기 상태를 즉시 가져오는 함수 (SSR 안전)
+const getInitialUser = (): AuthUser => {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored) as AuthUser;
+    }
+  } catch {
+    // 파싱 오류 시 무시
+  }
+  return null;
+};
+
 export function useAuth() {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AuthUser>(getInitialUser);
+  const [loading, setLoading] = useState(() => {
+    // 클라이언트에서 이미 유저가 있으면 로딩 false
+    if (typeof window === "undefined") return true;
+    return !getInitialUser();
+  });
 
-  // localStorage에서 세션 복원
+  // localStorage 변경 감지 및 초기화 확인
   useEffect(() => {
+    // 이미 유저가 있으면 로딩 완료
+    if (user) {
+      setLoading(false);
+      return;
+    }
+
+    // 한번 더 확인 (hydration 후)
     try {
       const stored = localStorage.getItem(AUTH_STORAGE_KEY);
       if (stored) {
@@ -40,7 +65,7 @@ export function useAuth() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   // 로그인 (로그인 페이지에서 직접 처리하므로 여기서는 상태만 업데이트)
   const setAuthUser = useCallback((authUser: AuthUser) => {
