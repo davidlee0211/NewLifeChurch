@@ -18,7 +18,9 @@ import {
   Shuffle,
   ArrowLeft,
   Dices,
-  Trophy
+  Trophy,
+  Maximize,
+  Minimize
 } from "lucide-react";
 
 interface Student {
@@ -82,7 +84,15 @@ export default function TeamPickerPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveComplete, setSaveComplete] = useState(false);
 
+  // 전체화면
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   const rouletteRef = useRef<HTMLDivElement>(null);
+
+  // 전체화면 토글 (메인 컨텐츠 영역만)
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
 
   // 학생 및 팀 목록 가져오기
   useEffect(() => {
@@ -329,7 +339,7 @@ export default function TeamPickerPage() {
   // 다시 뽑기 (기존 배정 초기화)
   const handleResetAssignments = async () => {
     if (!churchId) return;
-    if (!confirm("기존 팀 배정을 초기화하고 다시 뽑으시겠습니까?")) return;
+    if (!confirm("기존 팀 배정을 초기화하고 다시 뽑으시겠습니까?\n(팀 정보도 함께 삭제됩니다)")) return;
 
     // 모든 학생의 팀 배정 초기화
     for (const student of students) {
@@ -340,6 +350,12 @@ export default function TeamPickerPage() {
           .eq("id", student.id);
       }
     }
+
+    // 팀 삭제
+    await supabase
+      .from("teams")
+      .delete()
+      .eq("church_id", churchId);
 
     // 학생 목록 다시 불러오기
     const { data } = await supabase
@@ -352,6 +368,8 @@ export default function TeamPickerPage() {
       setStudents(data as Student[]);
     }
 
+    // 기존 팀 목록 초기화
+    setExistingTeams([]);
     setGamePhase("setup");
   };
 
@@ -377,16 +395,26 @@ export default function TeamPickerPage() {
   // 기존 팀 배정 현황 화면
   if (gamePhase === "existing") {
     return (
-      <div className="space-y-6">
+      <div className={`space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 p-4 bg-white overflow-auto' : ''}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
             <Trophy className="w-7 h-7 text-google-yellow" />
             팀 배정 현황
           </h2>
-          <Button variant="ghost" onClick={handleResetAssignments} className="rounded-xl text-google-red hover:bg-google-red/10">
-            <RotateCcw className="w-4 h-4 mr-2" />
-            다시 뽑기
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              onClick={toggleFullscreen}
+              className="rounded-xl flex items-center gap-1"
+            >
+              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+              <span className="hidden sm:inline">{isFullscreen ? "축소" : "전체화면"}</span>
+            </Button>
+            <Button variant="ghost" onClick={handleResetAssignments} className="rounded-xl text-google-red hover:bg-google-red/10">
+              <RotateCcw className="w-4 h-4 mr-2" />
+              다시 뽑기
+            </Button>
+          </div>
         </div>
 
         {/* 팀별 현황 */}
@@ -455,11 +483,21 @@ export default function TeamPickerPage() {
   // 설정 화면
   if (gamePhase === "setup") {
     return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
-          <Dices className="w-7 h-7 text-google-red" />
-          팀 뽑기
-        </h2>
+      <div className={`space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 p-4 bg-white overflow-auto' : ''}`}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
+            <Dices className="w-7 h-7 text-google-red" />
+            팀 뽑기
+          </h2>
+          <Button
+            variant="ghost"
+            onClick={toggleFullscreen}
+            className="rounded-xl flex items-center gap-1"
+          >
+            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            <span className="hidden sm:inline">{isFullscreen ? "축소" : "전체화면"}</span>
+          </Button>
+        </div>
 
         {students.length === 0 ? (
           <Card className="rounded-2xl border-2 border-dashed border-gray-300">
@@ -583,16 +621,26 @@ export default function TeamPickerPage() {
   // 뽑기 진행 화면
   if (gamePhase === "picking") {
     return (
-      <div className="space-y-6">
+      <div className={`space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 p-4 bg-white overflow-auto' : ''}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
             <Dices className="w-7 h-7 text-google-red" />
             팀 뽑기
           </h2>
-          <Button variant="ghost" onClick={resetGame} className="rounded-xl">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            설정으로
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              onClick={toggleFullscreen}
+              className="rounded-xl flex items-center gap-1"
+            >
+              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+              <span className="hidden sm:inline">{isFullscreen ? "축소" : "전체화면"}</span>
+            </Button>
+            <Button variant="ghost" onClick={resetGame} className="rounded-xl">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              설정으로
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -787,16 +835,26 @@ export default function TeamPickerPage() {
 
   // 결과 화면
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isFullscreen ? 'fixed inset-0 z-50 p-4 bg-white overflow-auto' : ''}`}>
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
           <Trophy className="w-7 h-7 text-google-yellow" />
           팀 배정 결과
         </h2>
-        <Button variant="ghost" onClick={resetGame} className="rounded-xl">
-          <RotateCcw className="w-4 h-4 mr-2" />
-          다시 뽑기
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            onClick={toggleFullscreen}
+            className="rounded-xl flex items-center gap-1"
+          >
+            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            <span className="hidden sm:inline">{isFullscreen ? "축소" : "전체화면"}</span>
+          </Button>
+          <Button variant="ghost" onClick={resetGame} className="rounded-xl">
+            <RotateCcw className="w-4 h-4 mr-2" />
+            다시 뽑기
+          </Button>
+        </div>
       </div>
 
       {/* 저장 완료 메시지 */}

@@ -14,7 +14,6 @@ import {
   Coins,
   Gamepad2,
   Dices,
-  Target,
   HelpCircle,
   Settings,
   User,
@@ -47,7 +46,7 @@ const navItems: NavItem[] = [
     icon: Gamepad2,
     children: [
       { href: "/admin/games/team-picker", label: "팀 뽑기", icon: Dices },
-      { href: "/admin/games/quiz-board", label: "퀴즈 보드게임", icon: Target },
+      { href: "/admin/games/quiz-board", label: "바이블다이스", icon: Dices },
     ],
   },
   { href: "/admin/quizzes", label: "퀴즈 관리", icon: HelpCircle },
