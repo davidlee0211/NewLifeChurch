@@ -452,10 +452,10 @@ export default function BibleDicePage() {
 
       {/* 게임 시작 전 */}
       {!gameStarted && !winner && (
-        <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-white text-center">
-          <Dices className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 opacity-80" />
-          <h3 className="text-xl sm:text-2xl font-black mb-2">바이블다이스</h3>
-          <p className="text-white/80 mb-6 text-sm sm:text-base">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center shadow-lg border-2 border-purple-200">
+          <Dices className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-purple-600" />
+          <h3 className="text-xl sm:text-2xl font-black mb-2 text-gray-800">바이블다이스</h3>
+          <p className="text-gray-500 mb-6 text-sm sm:text-base">
             퀴즈를 맞추고 주사위를 굴려 먼저 도착점에 도달하세요!
           </p>
           <div className="flex flex-wrap justify-center gap-2 mb-6">
@@ -470,12 +470,13 @@ export default function BibleDicePage() {
                 </div>
               ))
             ) : (
-              <p className="text-white/60 text-sm">팀이 아직 없습니다</p>
+              <p className="text-gray-400 text-sm">팀이 아직 없습니다</p>
             )}
           </div>
           <Button
             onClick={startGame}
-            className="bg-white text-purple-700 hover:bg-gray-100 font-bold text-base sm:text-lg px-8 py-3 inline-flex items-center justify-center gap-2"
+            size="lg"
+            className="font-bold text-base sm:text-lg px-8 py-3 inline-flex items-center justify-center gap-2"
           >
             <Play className="w-5 h-5" />
             게임 시작
@@ -485,9 +486,9 @@ export default function BibleDicePage() {
 
       {/* 승자 화면 */}
       {winner && (
-        <div className="bg-gradient-to-br from-google-yellow to-yellow-500 rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center">
-          <Trophy className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 text-white" />
-          <h3 className="text-2xl sm:text-3xl font-black text-white mb-2">우승!</h3>
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center shadow-lg border-2 border-yellow-300">
+          <Trophy className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 text-google-yellow" />
+          <h3 className="text-2xl sm:text-3xl font-black text-gray-800 mb-2">우승!</h3>
           <div
             className="inline-block px-6 py-3 rounded-2xl text-white text-xl sm:text-2xl font-black mb-6"
             style={{ backgroundColor: winner.color }}
@@ -495,7 +496,7 @@ export default function BibleDicePage() {
             {winner.name}
           </div>
           <div>
-            <Button onClick={resetGame} className="bg-white text-google-yellow hover:bg-gray-100 inline-flex items-center justify-center gap-2">
+            <Button onClick={resetGame} className="font-bold inline-flex items-center justify-center gap-2">
               <RotateCcw className="w-4 h-4" />
               다시 시작
             </Button>
@@ -694,16 +695,16 @@ export default function BibleDicePage() {
 
           {/* 대기 상태 - 문제 출제 버튼 */}
           {gamePhase === "idle" && (
-            <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-6 text-center">
+            <div className="bg-white rounded-2xl p-6 text-center shadow-lg border-2 border-purple-200">
               {quizzes.length > 0 ? (
                 <>
-                  <p className="text-white/90 mb-4 text-sm sm:text-base font-bold">
+                  <p className="text-gray-600 mb-4 text-sm sm:text-base font-bold">
                     퀴즈 {currentQuizIndex + 1} / {quizzes.length}
                   </p>
                   <Button
                     onClick={handleShowQuiz}
                     size="lg"
-                    className="bg-white text-purple-700 hover:bg-gray-100 font-bold text-base sm:text-lg px-8 inline-flex items-center justify-center gap-2"
+                    className="font-bold text-base sm:text-lg px-8 inline-flex items-center justify-center gap-2"
                   >
                     <Sparkles className="w-5 h-5" />
                     문제 출제
@@ -711,10 +712,10 @@ export default function BibleDicePage() {
                 </>
               ) : (
                 <div className="py-4">
-                  <p className="text-white/90 mb-2 text-sm sm:text-base font-bold">
+                  <p className="text-gray-700 mb-2 text-sm sm:text-base font-bold">
                     등록된 퀴즈가 없습니다
                   </p>
-                  <p className="text-white/60 text-xs sm:text-sm">
+                  <p className="text-gray-400 text-xs sm:text-sm">
                     퀴즈 관리에서 퀴즈를 먼저 추가해주세요
                   </p>
                 </div>
@@ -724,9 +725,9 @@ export default function BibleDicePage() {
 
           {/* 퀴즈 화면 (카훗 스타일) */}
           {(gamePhase === "showing_quiz" || gamePhase === "answer_revealed") && currentQuiz && (
-            <div className="bg-purple-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-4">
+            <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-4 shadow-lg border-2 border-purple-200">
               {/* 문제 */}
-              <div className="bg-white rounded-2xl p-4 sm:p-6 text-center">
+              <div className="bg-purple-100 rounded-2xl p-4 sm:p-6 text-center">
                 <span className="text-xs sm:text-sm text-purple-600 font-bold mb-2 block">Q{currentQuizIndex + 1}</span>
                 <p className="text-base sm:text-xl lg:text-2xl font-black text-gray-800">
                   {currentQuiz.question}
@@ -741,9 +742,9 @@ export default function BibleDicePage() {
                   let buttonStyle = KAHOOT_COLORS[index];
                   if (showAnswer) {
                     if (isCorrect) {
-                      buttonStyle = "bg-green-500 ring-4 ring-white scale-105";
+                      buttonStyle = "bg-green-500 ring-4 ring-green-300 scale-105";
                     } else {
-                      buttonStyle = "bg-gray-600 opacity-50";
+                      buttonStyle = "bg-gray-400 opacity-50";
                     }
                   }
 
@@ -768,7 +769,7 @@ export default function BibleDicePage() {
                   <Button
                     onClick={handleRevealAnswer}
                     size="lg"
-                    className="bg-white text-purple-700 hover:bg-gray-100 font-bold inline-flex items-center justify-center gap-2"
+                    className="font-bold inline-flex items-center justify-center gap-2"
                   >
                     <Eye className="w-5 h-5" />
                     정답 공개
@@ -782,7 +783,7 @@ export default function BibleDicePage() {
                   <Button
                     onClick={handleGoToTeamSelection}
                     size="lg"
-                    className="bg-white text-purple-700 hover:bg-gray-100 font-bold inline-flex items-center justify-center gap-2"
+                    className="font-bold inline-flex items-center justify-center gap-2"
                   >
                     <Check className="w-5 h-5" />
                     정답 맞춘 팀 선택하기
@@ -836,7 +837,7 @@ export default function BibleDicePage() {
 
           {/* 주사위 굴리기 화면 */}
           {gamePhase === "rolling_dice" && currentDiceTeam && (
-            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl sm:rounded-3xl p-6 sm:p-8">
+            <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg border-2 border-purple-200">
               <div className="text-center">
                 {/* 현재 팀 표시 */}
                 <div
@@ -853,7 +854,7 @@ export default function BibleDicePage() {
                       <div
                         key={t.id}
                         className={`w-3 h-3 rounded-full ${
-                          t.id === currentDiceTeam.id ? "ring-2 ring-white" : "opacity-50"
+                          t.id === currentDiceTeam.id ? "ring-2 ring-purple-500" : "opacity-50"
                         }`}
                         style={{ backgroundColor: t.color }}
                       />
@@ -862,7 +863,7 @@ export default function BibleDicePage() {
                 )}
 
                 {/* 주사위 (실제 주사위 모양) */}
-                <div className={`w-28 h-28 sm:w-36 sm:h-36 bg-white rounded-3xl shadow-2xl mb-6 mx-auto ${isRolling ? 'animate-spin' : ''} p-4 sm:p-5`}>
+                <div className={`w-28 h-28 sm:w-36 sm:h-36 bg-purple-100 rounded-3xl shadow-lg mb-6 mx-auto ${isRolling ? 'animate-spin' : ''} p-4 sm:p-5`}>
                   {diceResult === null && !isRolling ? (
                     <div className="w-full h-full flex items-center justify-center">
                       <span className="text-4xl sm:text-5xl font-black text-purple-700">?</span>
@@ -897,9 +898,9 @@ export default function BibleDicePage() {
                   )}
                 </div>
 
-                {/* 보너스/페널티 메시지 */}
+                {/* 보너스 메시지 */}
                 {effectMessage && (
-                  <p className="text-lg sm:text-xl font-bold text-yellow-300 mb-4 animate-pulse">
+                  <p className="text-lg sm:text-xl font-bold text-green-600 mb-4 animate-pulse">
                     {effectMessage}
                   </p>
                 )}
@@ -909,7 +910,7 @@ export default function BibleDicePage() {
                   <Button
                     onClick={handleRollDice}
                     size="lg"
-                    className="bg-white text-purple-700 hover:bg-gray-100 font-bold text-lg px-8 inline-flex items-center justify-center gap-2"
+                    className="font-bold text-lg px-8 inline-flex items-center justify-center gap-2"
                   >
                     <Dices className="w-6 h-6" />
                     주사위 굴리기!
@@ -918,13 +919,13 @@ export default function BibleDicePage() {
 
                 {diceResult && !isRolling && (
                   <div className="space-y-4">
-                    <p className="text-2xl sm:text-3xl font-black text-white">
+                    <p className="text-2xl sm:text-3xl font-black text-purple-700">
                       {diceResult}칸 이동!
                     </p>
                     <Button
                       onClick={handleNextDiceOrQuiz}
                       disabled={isMoving}
-                      className="bg-white text-purple-700 hover:bg-gray-100 font-bold inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="font-bold inline-flex items-center justify-center gap-2"
                     >
                       {isMoving ? "이동 중..." : diceQueue.findIndex(t => t.id === currentDiceTeam.id) < diceQueue.length - 1
                         ? "다음 팀 주사위"
