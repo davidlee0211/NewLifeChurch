@@ -11,7 +11,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "모주-모두의주일학교",
+  title: "모두의주일학교",
   description: "모두의주일학교",
   manifest: "/manifest.json",
   icons: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "모주",
+    title: "모두의주일학교",
   },
 };
 
