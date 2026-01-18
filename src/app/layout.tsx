@@ -28,6 +28,17 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "모두의주일학교",
   },
+  openGraph: {
+    title: "모두의주일학교",
+    description: "모두의주일학교",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
