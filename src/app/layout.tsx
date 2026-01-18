@@ -11,9 +11,11 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://modoosunday.com"),
   title: "모두의주일학교",
   description: "모두의주일학교",
   manifest: "/manifest.json",
+  keywords: ["주일학교", "교회", "달란트", "출석", "QT"],
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -29,6 +31,10 @@ export const metadata: Metadata = {
     title: "모두의주일학교",
   },
   openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: "https://modoosunday.com",
+    siteName: "모두의주일학교",
     title: "모두의주일학교",
     description: "모두의주일학교",
     images: [
@@ -36,8 +42,21 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
+        alt: "모두의주일학교",
       },
     ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "모두의주일학교",
+    description: "모두의주일학교",
+    images: ["/og-image.png"],
+  },
+  verification: {
+    google: "구글서치콘솔_인증코드",
+    other: {
+      "naver-site-verification": "네이버서치어드바이저_인증코드",
+    },
   },
 };
 
