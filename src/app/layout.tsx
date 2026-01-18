@@ -52,13 +52,7 @@ export const metadata: Metadata = {
     description: "모두의주일학교",
     images: ["/og-image.png"],
   },
-  verification: {
-    google: "구글서치콘솔_인증코드",
-    other: {
-      "naver-site-verification": "네이버서치어드바이저_인증코드",
-    },
-  },
-};
+  };
 
 export default function RootLayout({
   children,
