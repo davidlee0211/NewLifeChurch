@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import type { Team } from "@/types/database";
-import { Dices, RotateCcw, Trophy, Sparkles, Play, Check, Eye, Maximize, Minimize } from "lucide-react";
+import { Dices, RotateCcw, Trophy, Sparkles, Play, Check, Eye, Maximize, Minimize, Coins, Loader2 } from "lucide-react";
 
 // 보드판 칸 수 (0~16, 총 17칸)
 const BOARD_SIZE = 17;
@@ -47,14 +47,18 @@ interface TeamPiece {
 }
 
 // 퀴즈 인터페이스
+type QuizType = "multiple_choice" | "short_answer";
+
 interface BibleDiceQuiz {
   id: string;
+  quiz_type: QuizType;
   question: string;
-  option1: string;
-  option2: string;
-  option3: string;
-  option4: string;
-  correct_answer: number;
+  option1: string | null;
+  option2: string | null;
+  option3: string | null;
+  option4: string | null;
+  correct_answer: number | null;
+  correct_answer_text: string | null;
 }
 
 // 주사위 결과 (가중치 적용: 1=70%, 2=25%, 3=5%)
@@ -82,7 +86,10 @@ export default function BibleDicePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
   const [winner, setWinner] = useState<Team | null>(null);
+  const [gameEnded, setGameEnded] = useState(false); // 퀴즈 소진으로 게임 종료
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isAwardingTalents, setIsAwardingTalents] = useState(false);
+  const [talentsAwarded, setTalentsAwarded] = useState(false);
 
   // 퀴즈 관련 상태
   const [quizzes, setQuizzes] = useState<BibleDiceQuiz[]>([]);
@@ -123,7 +130,7 @@ export default function BibleDicePage() {
       // 퀴즈 로드
       const { data: quizzesData } = await supabase
         .from("bible_dice_quizzes")
-        .select("id, question, option1, option2, option3, option4, correct_answer")
+        .select("id, quiz_type, question, option1, option2, option3, option4, correct_answer, correct_answer_text")
         .eq("church_id", churchId)
         .eq("is_active", true);
 
@@ -160,6 +167,8 @@ export default function BibleDicePage() {
   const startGame = () => {
     setGameStarted(true);
     setWinner(null);
+    setGameEnded(false);
+    setTalentsAwarded(false);
     setTeamPieces(teams.map(team => ({
       team,
       position: 0,
@@ -179,6 +188,8 @@ export default function BibleDicePage() {
   const resetGame = () => {
     setGameStarted(false);
     setWinner(null);
+    setGameEnded(false);
+    setTalentsAwarded(false);
     setTeamPieces(teams.map(team => ({
       team,
       position: 0,
@@ -390,13 +401,72 @@ export default function BibleDicePage() {
     setCurrentDiceTeam(null);
     setDiceResult(null);
     setEffectMessage(null);
-    setCurrentQuizIndex(prev => (prev + 1) % quizzes.length);
-    setGamePhase("idle");
+
+    // 마지막 문제였는지 확인
+    if (currentQuizIndex >= quizzes.length - 1) {
+      // 퀴즈 소진 - 게임 종료
+      setGameEnded(true);
+      setGamePhase("idle");
+    } else {
+      setCurrentQuizIndex(prev => prev + 1);
+      setGamePhase("idle");
+    }
   };
 
   // 팀별 순위 계산
   const getRankings = () => {
     return [...teamPieces].sort((a, b) => b.position - a.position);
+  };
+
+  // 달란트 지급 (팀별 도착 칸 수만큼)
+  const handleAwardTalents = async () => {
+    if (!churchId || talentsAwarded) return;
+
+    setIsAwardingTalents(true);
+
+    try {
+      // 각 팀의 학생들에게 도착 칸 수만큼 달란트 지급
+      for (const piece of teamPieces) {
+        if (piece.position === 0) continue; // 0칸은 지급 안 함
+
+        // 해당 팀의 학생 목록 조회
+        const { data: students } = await supabase
+          .from("students")
+          .select("id, talents")
+          .eq("church_id", churchId)
+          .eq("team_id", piece.team.id);
+
+        if (students && students.length > 0) {
+          // 각 학생에게 달란트 지급
+          for (const student of students) {
+            const studentData = student as { id: string; talents: number };
+            const newTalents = (studentData.talents || 0) + piece.position;
+
+            // 달란트 업데이트
+            await supabase
+              .from("students")
+              .update({ talents: newTalents } as never)
+              .eq("id", studentData.id);
+
+            // 달란트 기록 추가
+            await supabase.from("talent_logs").insert({
+              student_id: studentData.id,
+              church_id: churchId,
+              amount: piece.position,
+              reason: `바이블다이스 게임 - ${piece.team.name} (${piece.position}칸)`,
+            } as never);
+          }
+        }
+      }
+
+      setTalentsAwarded(true);
+      alert("달란트 지급이 완료되었습니다!");
+    } catch (error) {
+      console.error("Error awarding talents:", error);
+      alert("달란트 지급 중 오류가 발생했습니다.");
+    } finally {
+      setIsAwardingTalents(false);
+    }
   };
 
   // 칸 색상
@@ -484,19 +554,92 @@ export default function BibleDicePage() {
         </div>
       )}
 
-      {/* 승자 화면 */}
-      {winner && (
+      {/* 게임 결과 화면 (퀴즈 소진 또는 도착) */}
+      {(winner || gameEnded) && (
         <div className="bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center shadow-lg border-2 border-yellow-300">
           <Trophy className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 text-google-yellow" />
-          <h3 className="text-2xl sm:text-3xl font-black text-gray-800 mb-2">우승!</h3>
-          <div
-            className="inline-block px-6 py-3 rounded-2xl text-white text-xl sm:text-2xl font-black mb-6"
-            style={{ backgroundColor: winner.color }}
-          >
-            {winner.name}
+          <h3 className="text-2xl sm:text-3xl font-black text-gray-800 mb-2">
+            {winner ? "우승!" : "게임 종료!"}
+          </h3>
+          <p className="text-gray-500 mb-4 text-sm">
+            {winner ? "도착점 도달!" : `총 ${quizzes.length}문제 완료`}
+          </p>
+
+          {/* 최종 순위 */}
+          <div className="bg-gray-50 rounded-2xl p-4 mb-6 max-w-md mx-auto">
+            <h4 className="font-bold text-gray-700 mb-3 text-sm">최종 순위</h4>
+            <div className="space-y-2">
+              {getRankings().map((piece, idx) => (
+                <div
+                  key={piece.team.id}
+                  className={`flex items-center justify-between p-3 rounded-xl ${
+                    idx === 0 ? "bg-yellow-100 border-2 border-yellow-400" : "bg-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl font-bold">
+                      {idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `${idx + 1}`}
+                    </span>
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+                      style={{ backgroundColor: piece.team.color }}
+                    >
+                      {piece.team.name.charAt(0)}
+                    </div>
+                    <span className={`font-bold ${idx === 0 ? "text-lg" : ""}`}>
+                      {piece.team.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-gray-600">
+                      {piece.position}칸
+                    </span>
+                    {piece.position >= BOARD_SIZE - 1 && (
+                      <span className="text-xs bg-google-green text-white px-2 py-0.5 rounded-full">
+                        도착!
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div>
-            <Button onClick={resetGame} className="font-bold inline-flex items-center justify-center gap-2">
+
+          {/* 달란트 지급 안내 */}
+          {!talentsAwarded && (
+            <p className="text-xs text-gray-400 mb-4">
+              💡 달란트 지급 시 각 팀 학생들에게 도착 칸 수만큼 달란트가 지급됩니다
+            </p>
+          )}
+
+          <div className="flex gap-3 justify-center">
+            <Button
+              onClick={handleAwardTalents}
+              disabled={isAwardingTalents || talentsAwarded}
+              className={`font-bold inline-flex items-center justify-center gap-2 ${
+                talentsAwarded
+                  ? "bg-gray-400"
+                  : "bg-google-yellow hover:bg-yellow-500"
+              }`}
+            >
+              {isAwardingTalents ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  지급 중...
+                </>
+              ) : talentsAwarded ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  지급 완료
+                </>
+              ) : (
+                <>
+                  <Coins className="w-4 h-4" />
+                  달란트 지급
+                </>
+              )}
+            </Button>
+            <Button onClick={resetGame} variant="secondary" className="font-bold inline-flex items-center justify-center gap-2">
               <RotateCcw className="w-4 h-4" />
               다시 시작
             </Button>
@@ -505,7 +648,7 @@ export default function BibleDicePage() {
       )}
 
       {/* 게임 진행 중 */}
-      {gameStarted && !winner && (
+      {gameStarted && !winner && !gameEnded && (
         <>
           {/* 보드판 - S자 형태 */}
           <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-6 shadow-lg border-2 border-gray-100">
@@ -728,40 +871,69 @@ export default function BibleDicePage() {
             <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-4 shadow-lg border-2 border-purple-200">
               {/* 문제 */}
               <div className="bg-purple-100 rounded-2xl p-4 sm:p-6 text-center">
-                <span className="text-xs sm:text-sm text-purple-600 font-bold mb-2 block">Q{currentQuizIndex + 1}</span>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-xs sm:text-sm text-purple-600 font-bold">Q{currentQuizIndex + 1}</span>
+                  <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${
+                    currentQuiz.quiz_type === "short_answer"
+                      ? "bg-purple-200 text-purple-700"
+                      : "bg-blue-200 text-blue-700"
+                  }`}>
+                    {currentQuiz.quiz_type === "short_answer" ? "주관식" : "객관식"}
+                  </span>
+                </div>
                 <p className="text-base sm:text-xl lg:text-2xl font-black text-gray-800">
                   {currentQuiz.question}
                 </p>
               </div>
 
-              {/* 4지선다 - 카훗 스타일 */}
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                {[currentQuiz.option1, currentQuiz.option2, currentQuiz.option3, currentQuiz.option4].map((option, index) => {
-                  const isCorrect = index + 1 === currentQuiz.correct_answer;
+              {/* 객관식: 4지선다 - 카훗 스타일 */}
+              {currentQuiz.quiz_type !== "short_answer" && (
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  {[currentQuiz.option1, currentQuiz.option2, currentQuiz.option3, currentQuiz.option4].map((option, index) => {
+                    const isCorrect = index + 1 === currentQuiz.correct_answer;
 
-                  let buttonStyle = KAHOOT_COLORS[index];
-                  if (showAnswer) {
-                    if (isCorrect) {
-                      buttonStyle = "bg-green-500 ring-4 ring-green-300 scale-105";
-                    } else {
-                      buttonStyle = "bg-gray-400 opacity-50";
+                    let buttonStyle = KAHOOT_COLORS[index];
+                    if (showAnswer) {
+                      if (isCorrect) {
+                        buttonStyle = "bg-green-500 ring-4 ring-green-300 scale-105";
+                      } else {
+                        buttonStyle = "bg-gray-400 opacity-50";
+                      }
                     }
-                  }
 
-                  return (
-                    <div
-                      key={index}
-                      className={`${buttonStyle} p-3 sm:p-4 rounded-xl sm:rounded-2xl text-white font-bold text-xs sm:text-base flex items-center gap-2 min-h-[60px] sm:min-h-[80px] transition-all duration-300`}
-                    >
-                      <span className="text-lg sm:text-2xl">{KAHOOT_SHAPES[index]}</span>
-                      <span className="flex-1">{option}</span>
-                      {showAnswer && isCorrect && (
-                        <Check className="w-5 h-5 sm:w-6 sm:h-6" />
-                      )}
+                    return (
+                      <div
+                        key={index}
+                        className={`${buttonStyle} p-3 sm:p-4 rounded-xl sm:rounded-2xl text-white font-bold text-xs sm:text-base flex items-center gap-2 min-h-[60px] sm:min-h-[80px] transition-all duration-300`}
+                      >
+                        <span className="text-lg sm:text-2xl">{KAHOOT_SHAPES[index]}</span>
+                        <span className="flex-1">{option}</span>
+                        {showAnswer && isCorrect && (
+                          <Check className="w-5 h-5 sm:w-6 sm:h-6" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 주관식: 정답 표시 영역 */}
+              {currentQuiz.quiz_type === "short_answer" && (
+                <div className="text-center py-4">
+                  {showAnswer ? (
+                    <div className="bg-green-100 rounded-2xl p-6 inline-block">
+                      <p className="text-sm text-green-600 font-bold mb-2">정답</p>
+                      <p className="text-2xl sm:text-3xl font-black text-green-700">
+                        {currentQuiz.correct_answer_text}
+                      </p>
                     </div>
-                  );
-                })}
-              </div>
+                  ) : (
+                    <div className="bg-gray-100 rounded-2xl p-6 inline-block">
+                      <p className="text-gray-500 font-bold">학생들의 답변을 기다리세요...</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* 정답 공개 버튼 */}
               {gamePhase === "showing_quiz" && !showAnswer && (

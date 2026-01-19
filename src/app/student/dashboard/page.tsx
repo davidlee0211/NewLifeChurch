@@ -19,7 +19,8 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
-  Hand
+  Hand,
+  Dices
 } from "lucide-react";
 
 interface QuestRecord {
@@ -51,6 +52,13 @@ interface WeeklyVerse {
   verse_fr: string | null;
 }
 
+interface TalentLog {
+  id: string;
+  amount: number;
+  reason: string;
+  created_at: string;
+}
+
 export default function StudentDashboard() {
   const { user, churchId } = useAuth();
   const [team, setTeam] = useState<Team | null>(null);
@@ -59,6 +67,7 @@ export default function StudentDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [monthRecords, setMonthRecords] = useState<QuestRecord[]>([]);
   const [weeklyVerse, setWeeklyVerse] = useState<WeeklyVerse | null>(null);
+  const [weeklyQuizTalent, setWeeklyQuizTalent] = useState(0);
 
   const studentName = user?.name || "친구";
   const talent = (user as { talent?: number })?.talent || 0;
@@ -160,6 +169,19 @@ export default function StudentDashboard() {
         .single();
 
       if (verseData) setWeeklyVerse(verseData as WeeklyVerse);
+
+      // 이번 주 퀴즈 달란트 (바이블다이스)
+      const { data: quizTalentData } = await supabase
+        .from("talent_logs")
+        .select("amount")
+        .eq("student_id", user.id)
+        .gte("created_at", sunday.toISOString())
+        .like("reason", "%바이블다이스%");
+
+      if (quizTalentData) {
+        const total = (quizTalentData as TalentLog[]).reduce((sum, log) => sum + log.amount, 0);
+        setWeeklyQuizTalent(total);
+      }
     };
 
     fetchData();
@@ -227,6 +249,57 @@ export default function StudentDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* 이번 주 요약 */}
+      <div>
+        <h2 className="text-lg font-black text-gray-800 mb-3 flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-google-red" /> 이번 주 요약
+        </h2>
+        <Card className="rounded-2xl shadow-md bg-gray-50">
+          <CardContent className="py-4">
+            <div className="grid grid-cols-5 gap-2">
+            <div className={`bg-white rounded-2xl p-2 sm:p-3 text-center shadow-sm transition-all ${isQuestCompleted("attendance", thisSunday) ? "ring-2 ring-google-green" : ""}`}>
+              <p className="text-xl sm:text-2xl font-black text-google-green flex justify-center">
+                {isQuestCompleted("attendance", thisSunday) ? (
+                  <CheckCircle className="w-6 h-6 sm:w-7 sm:h-7" />
+                ) : (
+                  <Square className="w-6 h-6 sm:w-7 sm:h-7 text-gray-300" />
+                )}
+              </p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-bold mt-1">출석</p>
+            </div>
+            <div className={`bg-white rounded-2xl p-2 sm:p-3 text-center shadow-sm transition-all ${isQuestCompleted("recitation", thisSunday) ? "ring-2 ring-google-yellow" : ""}`}>
+              <p className="text-xl sm:text-2xl font-black text-google-yellow flex justify-center">
+                {isQuestCompleted("recitation", thisSunday) ? (
+                  <CheckCircle className="w-6 h-6 sm:w-7 sm:h-7" />
+                ) : (
+                  <Square className="w-6 h-6 sm:w-7 sm:h-7 text-gray-300" />
+                )}
+              </p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-bold mt-1">암송</p>
+            </div>
+            <div className={`bg-white rounded-2xl p-2 sm:p-3 text-center shadow-sm transition-all ${weeklyQuizTalent > 0 ? "ring-2 ring-google-blue" : ""}`}>
+              <p className="text-xl sm:text-2xl font-black text-google-blue">
+                +{weeklyQuizTalent}
+              </p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-bold mt-1">퀴즈</p>
+            </div>
+            <div className="bg-white rounded-2xl p-2 sm:p-3 text-center shadow-sm">
+              <p className="text-xl sm:text-2xl font-black text-google-red">
+                {weeklyRecords.filter((r) => r.type === "qt" && r.approved).length}/6
+              </p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-bold">QT</p>
+            </div>
+            <div className="bg-white rounded-2xl p-2 sm:p-3 text-center shadow-sm">
+              <p className="text-xl sm:text-2xl font-black text-purple-600">
+                +{weeklyRecords.filter((r) => r.approved).reduce((sum, r) => sum + r.talent_earned, 0) + weeklyQuizTalent}
+              </p>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-bold">총합</p>
+            </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* 이번 주 암송 말씀 */}
       {weeklyVerse && (
@@ -325,6 +398,33 @@ export default function StudentDashboard() {
                   </p>
                   {isQuestCompleted("recitation", thisSunday) && (
                     <span className="text-xs text-white font-bold bg-google-yellow px-2 py-0.5 rounded-full">완료!</span>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 퀴즈 (바이블다이스) */}
+          <Card className={`rounded-2xl shadow-md transition-all ${weeklyQuizTalent > 0 ? "bg-google-blue/5" : "bg-white"}`}>
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                    weeklyQuizTalent > 0 ? "bg-google-blue" : "bg-gray-100"
+                  }`}>
+                    <Dices className={`w-6 h-6 ${weeklyQuizTalent > 0 ? "text-white" : "text-gray-400"}`} />
+                  </div>
+                  <div>
+                    <p className="font-black text-gray-800">퀴즈</p>
+                    <p className="text-xs text-gray-500">바이블다이스 게임</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`font-black flex items-center justify-end gap-1 ${weeklyQuizTalent > 0 ? "text-google-blue" : "text-gray-400"}`}>
+                    +{weeklyQuizTalent} <Coins className="w-4 h-4" />
+                  </p>
+                  {weeklyQuizTalent > 0 && (
+                    <span className="text-xs text-white font-bold bg-google-blue px-2 py-0.5 rounded-full">획득!</span>
                   )}
                 </div>
               </div>
@@ -502,49 +602,6 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* 이번 주 요약 */}
-      <Card className="rounded-2xl shadow-md bg-gray-50">
-        <CardContent className="py-4">
-          <h3 className="font-black text-gray-800 mb-3 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-google-red" /> 이번 주 요약
-          </h3>
-          <div className="grid grid-cols-4 gap-3">
-            <div className={`bg-white rounded-2xl p-3 text-center shadow-sm transition-all ${isQuestCompleted("attendance", thisSunday) ? "ring-2 ring-google-green" : ""}`}>
-              <p className="text-2xl font-black text-google-green flex justify-center">
-                {isQuestCompleted("attendance", thisSunday) ? (
-                  <CheckCircle className="w-7 h-7" />
-                ) : (
-                  <Square className="w-7 h-7 text-gray-300" />
-                )}
-              </p>
-              <p className="text-xs text-gray-500 font-bold mt-1">출석</p>
-            </div>
-            <div className={`bg-white rounded-2xl p-3 text-center shadow-sm transition-all ${isQuestCompleted("recitation", thisSunday) ? "ring-2 ring-google-yellow" : ""}`}>
-              <p className="text-2xl font-black text-google-yellow flex justify-center">
-                {isQuestCompleted("recitation", thisSunday) ? (
-                  <CheckCircle className="w-7 h-7" />
-                ) : (
-                  <Square className="w-7 h-7 text-gray-300" />
-                )}
-              </p>
-              <p className="text-xs text-gray-500 font-bold mt-1">암송</p>
-            </div>
-            <div className="bg-white rounded-2xl p-3 text-center shadow-sm">
-              <p className="text-2xl font-black text-google-red">
-                {weeklyRecords.filter((r) => r.type === "qt" && r.approved).length}/6
-              </p>
-              <p className="text-xs text-gray-500 font-bold">QT</p>
-            </div>
-            <div className="bg-white rounded-2xl p-3 text-center shadow-sm">
-              <p className="text-2xl font-black text-google-blue">
-                +{weeklyRecords.filter((r) => r.approved).reduce((sum, r) => sum + r.talent_earned, 0)}
-              </p>
-              <p className="text-xs text-gray-500 font-bold">달란트</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
