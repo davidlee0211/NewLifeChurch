@@ -15,7 +15,11 @@ import {
   ImageIcon,
   Lightbulb,
   X,
-  Loader2
+  Loader2,
+  Pencil,
+  Eraser,
+  Trash2,
+  RotateCcw,
 } from "lucide-react";
 
 interface TodayRecord {
@@ -32,6 +36,9 @@ interface QTTopic {
   image_urls: string[];
 }
 
+const DRAW_COLORS = ["#000000", "#ef4444", "#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#ec4899", "#ffffff"];
+const DRAW_SIZES = [2, 4, 8, 14];
+
 export default function QTUploadPage() {
   const { user, churchId } = useAuth();
   const [todayRecord, setTodayRecord] = useState<TodayRecord | null>(null);
@@ -43,6 +50,92 @@ export default function QTUploadPage() {
   const [talentAmount, setTalentAmount] = useState(0);
   const [viewerImage, setViewerImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 그림 그리기 상태
+  const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [isDrawingActive, setIsDrawingActive] = useState(false);
+  const [drawColor, setDrawColor] = useState("#000000");
+  const [drawSize, setDrawSize] = useState(4);
+  const [isEraser, setIsEraser] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lastPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // 캔버스 초기화 (흰 배경)
+  const initCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  };
+
+  // 캔버스 좌표 계산
+  const getCanvasPos = (e: React.MouseEvent | React.TouchEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ("touches" in e) {
+      const touch = e.touches[0];
+      return {
+        x: (touch.clientX - rect.left) * scaleX,
+        y: (touch.clientY - rect.top) * scaleY,
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+
+  const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const pos = getCanvasPos(e);
+    if (!pos) return;
+    setIsDrawingActive(true);
+    lastPosRef.current = pos;
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    if (!isDrawingActive) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const pos = getCanvasPos(e);
+    if (!pos || !lastPosRef.current) return;
+
+    ctx.beginPath();
+    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = isEraser ? "#ffffff" : drawColor;
+    ctx.lineWidth = isEraser ? drawSize * 3 : drawSize;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    lastPosRef.current = pos;
+  };
+
+  const endDraw = () => {
+    setIsDrawingActive(false);
+    lastPosRef.current = null;
+  };
+
+  // 그림 완료 → 파일로 변환
+  const completeDrawing = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `qt-drawing-${Date.now()}.png`, { type: "image/png" });
+      setSelectedImage(file);
+      setPreviewUrl(canvas.toDataURL("image/png"));
+      setIsDrawingMode(false);
+    }, "image/png");
+  };
 
   // 로컬 시간 기준 오늘 날짜 (YYYY-MM-DD)
   const getLocalDateString = () => {
@@ -100,6 +193,14 @@ export default function QTUploadPage() {
 
     fetchData();
   }, [user?.id, churchId, today]);
+
+  // 그림 모드 진입 시 캔버스 초기화
+  useEffect(() => {
+    if (isDrawingMode) {
+      setTimeout(initCanvas, 50);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDrawingMode]);
 
   // 이미지 선택 핸들러
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -406,6 +507,88 @@ export default function QTUploadPage() {
             </Button>
           </CardContent>
         </Card>
+      ) : isDrawingMode ? (
+        /* 그림 그리기 캔버스 */
+        <Card className="border-2 border-purple-400">
+          <CardContent className="py-4">
+            {/* 도구 모음 */}
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              {/* 색상 팔레트 */}
+              <div className="flex gap-1.5 flex-wrap">
+                {DRAW_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => { setDrawColor(c); setIsEraser(false); }}
+                    className={`w-7 h-7 rounded-full border-2 transition-transform ${
+                      drawColor === c && !isEraser ? "border-purple-500 scale-125" : "border-gray-300"
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+              {/* 지우개 + 크기 + 전체 지우기 */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsEraser(!isEraser)}
+                  className={`p-1.5 rounded-lg border-2 transition-colors ${isEraser ? "border-purple-500 bg-purple-100" : "border-gray-300"}`}
+                  title="지우개"
+                >
+                  <Eraser className="w-4 h-4 text-gray-700" />
+                </button>
+                <select
+                  value={drawSize}
+                  onChange={(e) => setDrawSize(Number(e.target.value))}
+                  className="text-xs border border-gray-300 rounded-lg px-1 py-1"
+                >
+                  {DRAW_SIZES.map((s) => (
+                    <option key={s} value={s}>{s}px</option>
+                  ))}
+                </select>
+                <button
+                  onClick={initCanvas}
+                  className="p-1.5 rounded-lg border-2 border-gray-300 hover:border-red-400 transition-colors"
+                  title="전체 지우기"
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </button>
+              </div>
+            </div>
+
+            {/* 캔버스 */}
+            <canvas
+              ref={canvasRef}
+              width={600}
+              height={400}
+              className="w-full border-2 border-gray-200 rounded-xl touch-none bg-white"
+              style={{ cursor: isEraser ? "cell" : "crosshair" }}
+              onMouseDown={startDraw}
+              onMouseMove={draw}
+              onMouseUp={endDraw}
+              onMouseLeave={endDraw}
+              onTouchStart={startDraw}
+              onTouchMove={draw}
+              onTouchEnd={endDraw}
+            />
+
+            <div className="flex gap-3 mt-3">
+              <Button
+                onClick={() => setIsDrawingMode(false)}
+                variant="secondary"
+                className="flex-1 flex items-center justify-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                취소
+              </Button>
+              <Button
+                onClick={completeDrawing}
+                className="flex-1 flex items-center justify-center gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                그림 완성
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <Card className="border-2 border-dashed border-gray-300">
           <CardContent className="py-8">
@@ -443,6 +626,18 @@ export default function QTUploadPage() {
                 <span className="flex items-center justify-center gap-2">
                   <ImageIcon className="w-5 h-5" />
                   갤러리에서 선택
+                </span>
+              </Button>
+
+              <Button
+                onClick={() => setIsDrawingMode(true)}
+                variant="secondary"
+                className="w-full"
+                size="lg"
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Pencil className="w-5 h-5" />
+                  그림으로 인증
                 </span>
               </Button>
             </div>
