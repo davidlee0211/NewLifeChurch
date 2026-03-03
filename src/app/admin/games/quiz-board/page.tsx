@@ -424,6 +424,9 @@ export default function BibleDicePage() {
 
     setIsAwardingTalents(true);
 
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
     try {
       // 각 팀의 학생들에게 도착 칸 수만큼 달란트 지급
       for (const piece of teamPieces) {
@@ -432,28 +435,31 @@ export default function BibleDicePage() {
         // 해당 팀의 학생 목록 조회
         const { data: students } = await supabase
           .from("students")
-          .select("id, talents")
+          .select("id, talent")
           .eq("church_id", churchId)
           .eq("team_id", piece.team.id);
 
         if (students && students.length > 0) {
           // 각 학생에게 달란트 지급
           for (const student of students) {
-            const studentData = student as { id: string; talents: number };
-            const newTalents = (studentData.talents || 0) + piece.position;
+            const studentData = student as { id: string; talent: number };
+            const newTalent = (studentData.talent || 0) + piece.position;
 
             // 달란트 업데이트
             await supabase
               .from("students")
-              .update({ talents: newTalents } as never)
+              .update({ talent: newTalent } as never)
               .eq("id", studentData.id);
 
             // 달란트 기록 추가
-            await supabase.from("talent_logs").insert({
+            await supabase.from("quest_records").insert({
               student_id: studentData.id,
               church_id: churchId,
-              amount: piece.position,
-              reason: `바이블다이스 게임 - ${piece.team.name} (${piece.position}칸)`,
+              type: "manual",
+              date: today,
+              talent_earned: piece.position,
+              approved: true,
+              approved_by: null,
             } as never);
           }
         }
