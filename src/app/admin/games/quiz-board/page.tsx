@@ -455,7 +455,7 @@ export default function BibleDicePage() {
               student_id: studentData.id,
               church_id: churchId,
               type: "bible_dice",
-              date: new Date().toISOString().split("T")[0],
+              date: new Date().toLocaleDateString("en-CA"),
               talent_earned: piece.position,
               approved: true,
             } as never);
