@@ -450,12 +450,14 @@ export default function BibleDicePage() {
 
             if (updateError) throw updateError;
 
-            // 달란트 기록 추가 (talent_logs 테이블 - 바이블다이스 전용)
-            const { error: insertError } = await supabase.from("talent_logs").insert({
+            // 달란트 기록 추가 (quest_records 테이블)
+            const { error: insertError } = await supabase.from("quest_records").insert({
               student_id: studentData.id,
               church_id: churchId,
-              amount: piece.position,
-              reason: `바이블다이스 게임 - ${piece.team.name} (${piece.position}칸)`,
+              type: "bible_dice",
+              date: new Date().toISOString().split("T")[0],
+              talent_earned: piece.position,
+              approved: true,
             } as never);
 
             if (insertError) throw insertError;

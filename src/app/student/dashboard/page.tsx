@@ -52,12 +52,6 @@ interface WeeklyVerse {
   verse_fr: string | null;
 }
 
-interface TalentLog {
-  id: string;
-  amount: number;
-  reason: string;
-  created_at: string;
-}
 
 export default function StudentDashboard() {
   const { user, churchId } = useAuth();
@@ -172,14 +166,14 @@ export default function StudentDashboard() {
 
       // 이번 주 퀴즈 달란트 (바이블다이스)
       const { data: quizTalentData } = await supabase
-        .from("talent_logs")
-        .select("amount")
+        .from("quest_records")
+        .select("talent_earned")
         .eq("student_id", user.id)
-        .gte("created_at", sunday.toISOString())
-        .like("reason", "%바이블다이스%");
+        .eq("type", "bible_dice")
+        .gte("date", formatDate(sunday));
 
       if (quizTalentData) {
-        const total = (quizTalentData as TalentLog[]).reduce((sum, log) => sum + log.amount, 0);
+        const total = (quizTalentData as { talent_earned: number }[]).reduce((sum, log) => sum + (log.talent_earned || 0), 0);
         setWeeklyQuizTalent(total);
       }
     };
