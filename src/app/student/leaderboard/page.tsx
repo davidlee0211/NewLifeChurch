@@ -8,7 +8,6 @@ import {
   Trophy,
   Loader2,
   Coins,
-  Medal
 } from "lucide-react";
 
 interface Student {
@@ -18,16 +17,9 @@ interface Student {
   team_id: string | null;
 }
 
-interface Team {
-  id: string;
-  name: string;
-  color: string;
-}
-
 export default function LeaderboardPage() {
   const { user, churchId } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const currentUserId = user?.id;
@@ -50,38 +42,29 @@ export default function LeaderboardPage() {
         setStudents(studentsData as Student[]);
       }
 
-      // 팀 목록 가져오기
-      const { data: teamsData } = await supabase
-        .from("teams")
-        .select("id, name, color")
-        .eq("church_id", churchId);
-
-      if (teamsData) {
-        setTeams(teamsData as Team[]);
-      }
-
       setIsLoading(false);
     };
 
     fetchData();
   }, [churchId]);
 
-  // 팀 이름 가져오기
-  const getTeamName = (teamId: string | null) => {
-    if (!teamId) return null;
-    const team = teams.find(t => t.id === teamId);
-    return team?.name || null;
-  };
+  // 같은 달란트끼리 그룹핑 (공동 순위 시 다음 순위는 +1)
+  const groups: { rank: number; talent: number; students: Student[] }[] = [];
+  for (let i = 0; i < students.length; i++) {
+    const existing = groups.find(g => g.talent === students[i].talent);
+    if (existing) {
+      existing.students.push(students[i]);
+    } else {
+      groups.push({ rank: groups.length + 1, talent: students[i].talent, students: [students[i]] });
+    }
+  }
 
-  // 팀 색상 가져오기
-  const getTeamColor = (teamId: string | null) => {
-    if (!teamId) return null;
-    const team = teams.find(t => t.id === teamId);
-    return team?.color || null;
-  };
+  // 최대 달란트 (프로그레스바 계산용)
+  const maxTalent = Math.max(...students.map((s) => s.talent), 1);
 
   // 내 순위 찾기
-  const myRank = students.findIndex(s => s.id === currentUserId) + 1;
+  const myGroup = groups.find(g => g.students.some(s => s.id === currentUserId));
+  const myRank = myGroup?.rank || 0;
 
   if (isLoading) {
     return (
@@ -139,60 +122,54 @@ export default function LeaderboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {students.map((student, index) => {
-                const isMe = student.id === currentUserId;
-                const teamName = getTeamName(student.team_id);
-                const teamColor = getTeamColor(student.team_id);
+              {groups.map((group) => {
+                const hasMe = group.students.some(s => s.id === currentUserId);
 
                 return (
                   <div
-                    key={student.id}
-                    className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-                      isMe
+                    key={group.rank}
+                    className={`flex items-center p-3 rounded-xl transition-all ${
+                      hasMe
                         ? "bg-google-yellow/20 border-2 border-google-yellow"
                         : "bg-gray-50 border-2 border-transparent"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3 w-full">
                       {/* 순위 */}
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${
-                        index === 0 ? "bg-yellow-400 text-yellow-800" :
-                        index === 1 ? "bg-gray-300 text-gray-700" :
-                        index === 2 ? "bg-amber-400 text-amber-800" :
-                        "bg-gray-100 text-gray-600"
-                      }`}>
-                        {index < 3 ? (
-                          <Medal className="w-5 h-5" />
-                        ) : (
-                          index + 1
-                        )}
-                      </div>
+                      <span className="text-base sm:text-xl w-6 sm:w-8 text-center flex-shrink-0">
+                        {group.rank === 1 ? "🥇" : group.rank === 2 ? "🥈" : group.rank === 3 ? "🥉" : <span className="text-gray-400 text-xs sm:text-sm font-bold">{group.rank}</span>}
+                      </span>
 
-                      {/* 이름 및 팀 */}
-                      <div className="flex items-center gap-2">
-                        <p className="font-black text-gray-800">
-                          {student.name}
-                          {isMe && (
-                            <span className="ml-1 text-xs bg-google-yellow px-1.5 py-0.5 rounded font-bold">
-                              나
+                      <div className="flex-1 min-w-0">
+                        {/* 이름 나란히 */}
+                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                          {group.students.map((student) => (
+                            <span key={student.id} className="text-xs sm:text-sm font-bold text-gray-800">
+                              {student.name}
+                              {student.id === currentUserId && (
+                                <span className="ml-1 text-xs bg-google-yellow px-1.5 py-0.5 rounded font-bold">
+                                  나
+                                </span>
+                              )}
                             </span>
-                          )}
-                        </p>
-                        {teamName && (
-                          <span
-                            className="text-xs font-bold text-white px-2 py-0.5 rounded-full"
-                            style={{ backgroundColor: teamColor || "#666" }}
-                          >
-                            {teamName}
+                          ))}
+                        </div>
+                        {/* 달란트 바 */}
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 bg-gray-100 rounded-full h-2 sm:h-3 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500 bg-google-yellow"
+                              style={{
+                                width: `${(group.talent / maxTalent) * 100}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs sm:text-sm font-black text-gray-700 w-10 sm:w-14 text-right flex items-center justify-end gap-0.5 sm:gap-1">
+                            {group.talent}
+                            <Coins className="w-3 h-3 sm:w-4 sm:h-4 text-google-yellow" />
                           </span>
-                        )}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* 달란트 */}
-                    <div className="flex items-center gap-1 font-black text-gray-700">
-                      {student.talent}
-                      <Coins className="w-4 h-4 text-google-yellow" />
                     </div>
                   </div>
                 );

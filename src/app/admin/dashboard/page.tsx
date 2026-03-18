@@ -358,42 +358,47 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent className="px-3 sm:px-6">
               <ul className="space-y-2 sm:space-y-3">
-                {displayStudents.map((student, index) => (
-                  <li key={student.id} className="flex items-center gap-2 sm:gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                    <span className="text-base sm:text-xl w-6 sm:w-8 text-center flex-shrink-0">
-                      {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : <span className="text-gray-400 text-xs sm:text-sm font-bold">{index + 1}</span>}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                        <span className="text-xs sm:text-sm font-bold text-gray-800 truncate">
-                          {student.name}
-                        </span>
-                        {student.team_name && (
-                          <span
-                            className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-lg font-bold text-white"
-                            style={{ backgroundColor: student.team_color || "#4285F4" }}
-                          >
-                            {student.team_name}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <div className="flex-1 bg-gray-100 rounded-full h-2 sm:h-3 overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-500 bg-google-yellow"
-                            style={{
-                              width: `${(student.talent / maxTalent) * 100}%`,
-                            }}
-                          />
+                {(() => {
+                  const groups: { rank: number; talent: number; students: typeof displayStudents }[] = [];
+                  for (let i = 0; i < displayStudents.length; i++) {
+                    const existing = groups.find(g => g.talent === displayStudents[i].talent);
+                    if (existing) {
+                      existing.students.push(displayStudents[i]);
+                    } else {
+                      groups.push({ rank: groups.length + 1, talent: displayStudents[i].talent, students: [displayStudents[i]] });
+                    }
+                  }
+                  return groups.map((group) => (
+                    <li key={group.rank} className="flex items-center gap-2 sm:gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                      <span className="text-base sm:text-xl w-6 sm:w-8 text-center flex-shrink-0">
+                        {group.rank === 1 ? "🥇" : group.rank === 2 ? "🥈" : group.rank === 3 ? "🥉" : <span className="text-gray-400 text-xs sm:text-sm font-bold">{group.rank}</span>}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                          {group.students.map((student) => (
+                            <span key={student.id} className="text-xs sm:text-sm font-bold text-gray-800">
+                              {student.name}
+                            </span>
+                          ))}
                         </div>
-                        <span className="text-xs sm:text-sm font-black text-gray-700 w-10 sm:w-14 text-right flex items-center justify-end gap-0.5 sm:gap-1">
-                          {student.talent}
-                          <Coins className="w-3 h-3 sm:w-4 sm:h-4 text-google-yellow" />
-                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 bg-gray-100 rounded-full h-2 sm:h-3 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500 bg-google-yellow"
+                              style={{
+                                width: `${(group.talent / maxTalent) * 100}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs sm:text-sm font-black text-gray-700 w-10 sm:w-14 text-right flex items-center justify-end gap-0.5 sm:gap-1">
+                            {group.talent}
+                            <Coins className="w-3 h-3 sm:w-4 sm:h-4 text-google-yellow" />
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  ));
+                })()}
               </ul>
             </CardContent>
           </Card>
