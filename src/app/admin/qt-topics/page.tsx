@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { compressImage } from "@/lib/compressImage";
 import { BookOpen, ChevronLeft, ChevronRight, Loader2, Save, Pencil, Trash2, Camera, Plus, X } from "lucide-react";
 
 interface QTTopic {
@@ -124,13 +125,16 @@ export default function QTTopicsPage() {
 
       for (let i = 0; i < selectedImages.length; i++) {
         const file = selectedImages[i];
+        const compressed = await compressImage(file, {
+          maxDimension: 1280,
+          quality: 0.75,
+        });
         const timestamp = Date.now();
-        const fileExt = file.name.split(".").pop() || "jpg";
-        const filePath = `qt-topics/${churchId}/${selectedDate}_${timestamp}_${i}.${fileExt}`;
+        const filePath = `qt-topics/${churchId}/${selectedDate}_${timestamp}_${i}.jpg`;
 
         const { error: uploadError } = await supabase.storage
           .from("qt-topics")
-          .upload(filePath, file);
+          .upload(filePath, compressed);
 
         if (uploadError) {
           console.error("Upload error:", uploadError);

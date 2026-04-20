@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { compressImage, canvasToCompressedFile } from "@/lib/compressImage";
 import {
   Camera,
   PartyPopper,
@@ -124,17 +125,14 @@ export default function QTUploadPage() {
     lastPosRef.current = null;
   };
 
-  // 그림 완료 → 파일로 변환
-  const completeDrawing = () => {
+  // 그림 완료 → 압축된 JPEG 파일로 변환
+  const completeDrawing = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const file = new File([blob], `qt-drawing-${Date.now()}.png`, { type: "image/png" });
-      setSelectedImage(file);
-      setPreviewUrl(canvas.toDataURL("image/png"));
-      setIsDrawingMode(false);
-    }, "image/png");
+    const file = await canvasToCompressedFile(canvas, `qt-drawing-${Date.now()}.jpg`, 0.8);
+    setSelectedImage(file);
+    setPreviewUrl(canvas.toDataURL("image/jpeg", 0.8));
+    setIsDrawingMode(false);
   };
 
   // 로컬 시간 기준 오늘 날짜 (YYYY-MM-DD)
@@ -240,14 +238,17 @@ export default function QTUploadPage() {
     setIsUploading(true);
 
     try {
-      // 1. Supabase Storage에 이미지 업로드
+      // 1. 이미지 압축 후 Supabase Storage에 업로드
+      const compressed = await compressImage(selectedImage, {
+        maxDimension: 1280,
+        quality: 0.75,
+      });
       const timestamp = Date.now();
-      const fileExt = selectedImage.name.split(".").pop() || "jpg";
-      const filePath = `${user.id}/${today}_${timestamp}.${fileExt}`;
+      const filePath = `${user.id}/${today}_${timestamp}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from("qt-submissions")
-        .upload(filePath, selectedImage);
+        .upload(filePath, compressed);
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
