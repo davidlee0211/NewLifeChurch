@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
-import { Gamepad2, Dices, HelpCircle, ArrowRight, LucideIcon } from "lucide-react";
+import { Gamepad2, Dices, HelpCircle, ArrowRight, Hand, LucideIcon } from "lucide-react";
 
 interface Game {
   title: string;
@@ -18,14 +18,21 @@ const games: Game[] = [
     description: "랜덤으로 팀을 구성하거나 학생을 선발합니다.",
     href: "/admin/games/team-picker",
     icon: Dices,
-    variant: "red",
+    variant: "yellow",
   },
   {
-    title: "퀴즈 보드",
-    description: "실시간 퀴즈 게임을 진행합니다.",
+    title: "바이블다이스",
+    description: "팀전 보드 게임 + 퀴즈로 진행합니다.",
     href: "/admin/games/quiz-board",
     icon: HelpCircle,
     variant: "blue",
+  },
+  {
+    title: "가위바위보 퀴즈",
+    description: "개인전 - 정답을 외친 학생을 클릭해 +1 달란트.",
+    href: "/admin/games/rps-quiz",
+    icon: Hand,
+    variant: "red",
   },
 ];
 

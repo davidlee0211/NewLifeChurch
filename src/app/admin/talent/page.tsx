@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { getCurrentSeasonId } from "@/lib/seasons";
 import type { Student, Team } from "@/types/database";
 import { Coins, Users, HandCoins, History, Loader2, Hand } from "lucide-react";
 
@@ -128,6 +129,7 @@ export default function TalentPage() {
 
       // 2. 기록 추가 (manual 타입으로)
       const today = getLocalDateString();
+      const seasonId = await getCurrentSeasonId(churchId);
       await supabase
         .from("quest_records")
         .insert([{
@@ -138,6 +140,7 @@ export default function TalentPage() {
           talent_earned: talentAmount,
           approved: true,
           approved_by: user.id,
+          season_id: seasonId,
         }] as never);
 
       // 상태 업데이트
@@ -195,6 +198,7 @@ export default function TalentPage() {
 
       // 2. 기록 추가 (음수 값으로)
       const today = new Date().toISOString().split("T")[0];
+      const seasonId = await getCurrentSeasonId(churchId);
       await supabase
         .from("quest_records")
         .insert([{
@@ -205,6 +209,7 @@ export default function TalentPage() {
           talent_earned: -talentAmount,
           approved: true,
           approved_by: user.id,
+          season_id: seasonId,
         }] as never);
 
       // 상태 업데이트

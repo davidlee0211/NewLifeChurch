@@ -4,10 +4,14 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import type { Season } from "@/types/database";
 import {
   Trophy,
   Loader2,
   Coins,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface Student {
@@ -20,6 +24,8 @@ interface Student {
 export default function LeaderboardPage() {
   const { user, churchId } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
+  const [pastSeasons, setPastSeasons] = useState<Season[]>([]);
+  const [expandedSeasonId, setExpandedSeasonId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const currentUserId = user?.id;
@@ -42,11 +48,28 @@ export default function LeaderboardPage() {
         setStudents(studentsData as Student[]);
       }
 
+      // 종료된 시즌 목록 가져오기 (최신순)
+      const { data: seasonsData } = await supabase
+        .from("seasons")
+        .select("*")
+        .eq("church_id", churchId)
+        .not("ended_at", "is", null)
+        .order("season_number", { ascending: false });
+
+      if (seasonsData) {
+        setPastSeasons(seasonsData as Season[]);
+      }
+
       setIsLoading(false);
     };
 
     fetchData();
   }, [churchId]);
+
+  const formatDate = (iso: string | null) => {
+    if (!iso) return "-";
+    return new Date(iso).toLocaleDateString("ko-KR");
+  };
 
   // 같은 달란트끼리 그룹핑 (공동 순위 시 다음 순위는 +1)
   const groups: { rank: number; talent: number; students: Student[] }[] = [];
@@ -178,6 +201,139 @@ export default function LeaderboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* 지난 시즌 랭킹 */}
+      {pastSeasons.length > 0 && (
+        <div className="space-y-3 pt-4">
+          <h3 className="text-base font-black text-gray-800 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-600" /> 지난 시즌 랭킹
+          </h3>
+          {pastSeasons.map((season) => {
+            const isOpen = expandedSeasonId === season.id;
+            const archive = season.archived_data;
+            const myRecord = archive?.students.find((s) => s.id === currentUserId);
+            const sortedStudents = archive
+              ? [...archive.students].sort((a, b) => b.talent - a.talent)
+              : [];
+            const myArchivedRank = myRecord
+              ? sortedStudents.findIndex((s) => s.id === currentUserId) + 1
+              : 0;
+
+            return (
+              <Card key={season.id} className="rounded-2xl shadow-md">
+                <button
+                  onClick={() => setExpandedSeasonId(isOpen ? null : season.id)}
+                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="text-left">
+                    <p className="font-bold text-gray-800 text-sm">{season.name}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {formatDate(season.started_at)} ~ {formatDate(season.ended_at)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {myRecord && (
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">내 결과</p>
+                        <p className="text-xs font-bold text-gray-800">
+                          {myArchivedRank}위 · {myRecord.talent}
+                          <Coins className="inline w-3 h-3 ml-0.5 text-google-yellow" />
+                        </p>
+                      </div>
+                    )}
+                    {isOpen ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    )}
+                  </div>
+                </button>
+
+                {isOpen && archive && (
+                  <CardContent className="border-t border-gray-100 pt-4">
+                    {/* 팀 순위 */}
+                    {archive.teams.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs font-bold text-gray-600 mb-2">팀 순위</p>
+                        <div className="space-y-1">
+                          {[...archive.teams]
+                            .sort((a, b) => b.total_talent - a.total_talent)
+                            .map((team, i) => (
+                              <div
+                                key={team.id}
+                                className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-xs font-bold w-5 flex-shrink-0">
+                                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
+                                  </span>
+                                  <span
+                                    className="w-2 h-2 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: team.color }}
+                                  />
+                                  <span className="text-sm font-bold text-gray-800 truncate">
+                                    {team.name}
+                                  </span>
+                                </div>
+                                <span className="font-bold text-google-yellow flex items-center gap-0.5 text-sm flex-shrink-0">
+                                  {team.total_talent.toLocaleString()}
+                                  <Coins className="w-3 h-3" />
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 학생 순위 전체 */}
+                    <div>
+                      <p className="text-xs font-bold text-gray-600 mb-2">학생 순위</p>
+                      <div className="space-y-1">
+                        {sortedStudents.map((student, i) => {
+                          const isMe = student.id === currentUserId;
+                          return (
+                            <div
+                              key={student.id}
+                              className={`flex items-center justify-between p-2 rounded-lg ${
+                                isMe
+                                  ? "bg-google-yellow/20 border border-google-yellow"
+                                  : "bg-gray-50"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-xs font-bold w-5 flex-shrink-0">
+                                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
+                                </span>
+                                <span className="text-sm font-bold text-gray-800 truncate">
+                                  {student.name}
+                                  {isMe && (
+                                    <span className="ml-1 text-xs bg-google-yellow px-1.5 py-0.5 rounded font-bold">
+                                      나
+                                    </span>
+                                  )}
+                                </span>
+                                {student.team_name && (
+                                  <span className="text-xs text-gray-500 truncate">
+                                    {student.team_name}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="font-bold text-google-yellow flex items-center gap-0.5 text-sm flex-shrink-0">
+                                {student.talent}
+                                <Coins className="w-3 h-3" />
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

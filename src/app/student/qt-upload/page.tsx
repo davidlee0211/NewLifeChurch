@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { getCurrentSeasonId } from "@/lib/seasons";
 import { compressImage, canvasToCompressedFile } from "@/lib/compressImage";
 import {
   Camera,
@@ -265,6 +266,7 @@ export default function QTUploadPage() {
       const photoUrl = urlData.publicUrl;
 
       // 3. quest_records 테이블에 레코드 생성
+      const seasonId = await getCurrentSeasonId(churchId);
       const { error: recordError } = await supabase
         .from("quest_records")
         .insert([{
@@ -275,6 +277,7 @@ export default function QTUploadPage() {
           photo_url: photoUrl,
           approved: false,
           talent_earned: 0,
+          season_id: seasonId,
         }] as never);
 
       if (recordError) {

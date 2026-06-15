@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { getCurrentSeasonId } from "@/lib/seasons";
 import type { Team } from "@/types/database";
 import { Dices, RotateCcw, Trophy, Sparkles, Play, Check, Eye, Maximize, Minimize, Coins, Loader2 } from "lucide-react";
 
@@ -425,6 +426,7 @@ export default function BibleDicePage() {
     setIsAwardingTalents(true);
 
     try {
+      const seasonId = await getCurrentSeasonId(churchId);
       // 각 팀의 학생들에게 도착 칸 수만큼 달란트 지급
       for (const piece of teamPieces) {
         if (piece.position === 0) continue; // 0칸은 지급 안 함
@@ -458,6 +460,7 @@ export default function BibleDicePage() {
               date: new Date().toLocaleDateString("en-CA"),
               talent_earned: piece.position,
               approved: true,
+              season_id: seasonId,
             } as never);
 
             if (insertError) throw insertError;

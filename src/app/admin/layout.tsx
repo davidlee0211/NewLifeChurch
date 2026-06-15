@@ -20,7 +20,9 @@ import {
   LogOut,
   Sparkles,
   Menu,
-  ChevronDown
+  ChevronDown,
+  Calendar,
+  Hand
 } from "lucide-react";
 // Note: User, LogOut are used in the header
 import type { LucideIcon } from "lucide-react";
@@ -40,6 +42,7 @@ const navItems: NavItem[] = [
   { href: "/admin/qt-topics", label: "QT 주제 등록", icon: FileText },
   { href: "/admin/qt-approval", label: "QT 승인", icon: Camera },
   { href: "/admin/talent", label: "달란트 관리", icon: Coins },
+  { href: "/admin/seasons", label: "시즌 관리", icon: Calendar },
   {
     href: "/admin/games",
     label: "게임",
@@ -47,6 +50,7 @@ const navItems: NavItem[] = [
     children: [
       { href: "/admin/games/team-picker", label: "팀 뽑기", icon: Dices },
       { href: "/admin/games/quiz-board", label: "바이블다이스", icon: Dices },
+      { href: "/admin/games/rps-quiz", label: "가위바위보 퀴즈", icon: Hand },
     ],
   },
   { href: "/admin/quizzes", label: "퀴즈 관리", icon: HelpCircle },

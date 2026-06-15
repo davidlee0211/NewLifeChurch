@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
+import { getCurrentSeasonId } from "@/lib/seasons";
 import type { Student, Team } from "@/types/database";
 import { CheckCircle, UserCheck, UserX, BookOpen, Users, List, User, Save, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -163,6 +164,7 @@ export default function AttendancePage() {
       );
       const attendanceTalent = settings.get("attendance") || 1;
       const recitationTalent = settings.get("recitation") || 1;
+      const seasonId = await getCurrentSeasonId(churchId);
 
       // 출석 변경 처리
       const newlyPresent = students.filter((s) => s.isPresent && !s.hasAttendanceRecord);
@@ -181,6 +183,7 @@ export default function AttendancePage() {
           date: selectedDate,
           talent_earned: attendanceTalent,
           approved: true,
+          season_id: seasonId,
         }));
 
         await supabase.from("quest_records").insert(records as never);
@@ -221,6 +224,7 @@ export default function AttendancePage() {
           date: selectedDate,
           talent_earned: recitationTalent,
           approved: true,
+          season_id: seasonId,
         }));
 
         await supabase.from("quest_records").insert(records as never);

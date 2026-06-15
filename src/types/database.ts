@@ -60,7 +60,41 @@ export interface QuestRecord {
   talent_earned: number;
   approved: boolean;
   approved_by: string | null; // 승인한 관리자 ID
+  season_id: string | null;   // 어느 시즌에 속한 기록인지
   created_at: string;
+}
+
+// 시즌
+export interface Season {
+  id: string;
+  church_id: string;
+  season_number: number;
+  name: string;
+  started_at: string;
+  ended_at: string | null;       // NULL = 진행 중
+  archived_data: SeasonArchive | null;
+  created_at: string;
+}
+
+// 시즌 종료 시 저장되는 스냅샷 구조
+export interface SeasonArchive {
+  ended_at: string;
+  total_talent: number;
+  student_count: number;
+  students: Array<{
+    id: string;
+    name: string;
+    team_id: string | null;
+    team_name: string | null;
+    talent: number;
+  }>;
+  teams: Array<{
+    id: string;
+    name: string;
+    color: string;
+    total_talent: number;
+    member_count: number;
+  }>;
 }
 
 // 달란트 설정 (교회별)
@@ -192,6 +226,14 @@ export interface Database {
         Row: WeeklyVerse;
         Insert: Omit<WeeklyVerse, 'id' | 'created_at'>;
         Update: Partial<Omit<WeeklyVerse, 'id' | 'created_at' | 'church_id'>>;
+      };
+      seasons: {
+        Row: Season;
+        Insert: Omit<Season, 'id' | 'created_at' | 'ended_at' | 'archived_data'> & {
+          ended_at?: string | null;
+          archived_data?: SeasonArchive | null;
+        };
+        Update: Partial<Omit<Season, 'id' | 'created_at' | 'church_id'>>;
       };
     };
   };
